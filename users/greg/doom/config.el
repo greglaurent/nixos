@@ -181,4 +181,26 @@
              sql-mode-hook))
   (add-hook h #'eglot-ensure))
 
+;; empv: drive mpv from Emacs (lighter than vlc). mpv + yt-dlp come from Nix;
+;; empv talks to mpv over its IPC socket directly (no socat needed). Drop mpv's
+;; default `--no-video' so it's a real video player, not audio-only.
+(use-package! empv
+  :config
+  (setq empv-mpv-args (remove "--no-video" empv-mpv-args))
+  (map! :leader
+        (:prefix ("o" . "open")
+         (:prefix ("v" . "mpv (empv)")
+          :desc "Play file"        "v"   #'empv-play-file
+          :desc "Play video"       "V"   #'empv-play-video
+          :desc "Play directory"   "d"   #'empv-play-directory
+          :desc "Media at point"   "."   #'empv-play-media-at-point
+          :desc "YouTube"          "y"   #'empv-youtube
+          :desc "Pause/resume"     "SPC" #'empv-toggle
+          :desc "Playlist"         "p"   #'empv-playlist-select
+          :desc "Next"             "n"   #'empv-playlist-next
+          :desc "Previous"         "N"   #'empv-playlist-prev
+          :desc "Seek"             "s"   #'empv-seek
+          :desc "Volume"           "u"   #'empv-set-volume
+          :desc "Quit mpv"         "q"   #'empv-exit))))
+
 ;;; config.el ends here

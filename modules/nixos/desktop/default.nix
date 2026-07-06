@@ -19,6 +19,7 @@
       kitty
       firefox
       localsend
+      imagemagick
     ];
     xdg.portal = {
       enable = true;

@@ -33,9 +33,11 @@
     # ── Media ──
     pkgs.vlc
     pkgs.mpv
+    pkgs.yt-dlp
     pkgs.obs-studio
-    pkgs.ffmpegthumbnailer
     pkgs.tidal-hifi
+    pkgs.imagemagick
+    pkgs.ffmpegthumbnailer
 
     # ── Other Utils ──
     # default: localsend
