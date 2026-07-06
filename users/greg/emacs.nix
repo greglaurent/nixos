@@ -1,5 +1,3 @@
-# Greg's Doom Emacs (nix-doom-emacs-unstraightened). Config is per-user in
-# ./doom and built into the package — reproducible, no `doom sync`.
 { config, pkgs, doom-emacs, ... }:
 {
   imports = [ doom-emacs.homeModule ];

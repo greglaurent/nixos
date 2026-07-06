@@ -150,6 +150,25 @@
       :desc "Browse Doom config (source)"       "f P"
       (cmd! (dired +doom-source-dir)))
 
+;; nix-doom-emacs-unstraightened builds Doom into a read-only /nix/store profile.
+;; The elisp syntax checker validates a file by byte-compiling it in a subprocess;
+;; for our own config files that macroexpands `doom!'/`map!', which re-runs Doom's
+;; module loader and dies with a spurious "Error in a Doom module ... (exit 255)"
+;; shown right on the buffer (it is NOT a real build/startup error — Doom loads
+;; clean). These files only load inside a fully-built Doom, so turn the elisp
+;; checkers off for files under the editable source (or the store copy); real
+;; elisp projects elsewhere keep their checkers.
+(add-hook! 'emacs-lisp-mode-hook
+  (defun +greg/disable-checkers-in-doom-config-h ()
+    (when (and buffer-file-name
+               (or (file-in-directory-p buffer-file-name +doom-source-dir)
+                   (file-in-directory-p buffer-file-name doom-user-dir)))
+      (setq-local flycheck-disabled-checkers
+                  (append '(emacs-lisp emacs-lisp-checkdoc)
+                          (bound-and-true-p flycheck-disabled-checkers)))
+      (remove-hook 'flymake-diagnostic-functions #'elisp-flymake-byte-compile t)
+      (remove-hook 'flymake-diagnostic-functions #'elisp-flymake-checkdoc t))))
+
 ;; Use nixd as the Nix LSP (installed via packages.nix) instead of Doom's default.
 (after! nix-mode
   (set-eglot-client! 'nix-mode '("nixd")))
