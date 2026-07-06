@@ -25,7 +25,7 @@
   outputs = { nixpkgs, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, ... }:
   let
     system = "x86_64-linux";
-    hosts = [ "rhizome" ];
+    hosts = [ "rhizome" "plateau" ];
     flakePkgs = final: prev: {
       zen-browser = zen-browser.packages.${system}.default;
       claude-desktop = claude-desktop.packages.${system}.claude-desktop-fhs;
