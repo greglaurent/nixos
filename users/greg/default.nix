@@ -8,6 +8,7 @@ in {
     ../../modules/home/cli.nix
     ../../modules/home/direnv.nix
     ../../modules/home/kitty.nix
+    ../../modules/home/typst.nix
     ../../modules/home/podman.nix
     ../../modules/home/packages.nix
     ./emacs.nix
