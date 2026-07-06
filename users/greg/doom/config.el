@@ -90,7 +90,15 @@
   ;; each prose paragraph shows as one huge line. visual-line-mode soft-wraps at
   ;; the window edge on word boundaries (built-in; the Doom :ui word-wrap module
   ;; is disabled). It's display-only — no newlines are inserted in the file.
-  :hook (typst-ts-mode . visual-line-mode))
+  :hook (typst-ts-mode . visual-line-mode)
+  :config
+  ;; Preview opens the compiled PDF in an Emacs pdf-view buffer (via pdf-tools,
+  ;; :tools (pdf +external)) instead of the browser. typst-ts-preview funcalls
+  ;; this on the output path; default is `browse-url' -> xdg-open -> browser.
+  ;; find-file-other-window keeps the source visible and reuses the buffer on
+  ;; re-preview, and it pairs with `typst-pdf-revert-visible' below so the PDF
+  ;; auto-updates on every save.
+  (setq typst-ts-preview-function #'find-file-other-window))
 
 (defun typst-pdf-revert-visible ()
   "After saving a .typ file, revert every visible pdf-view buffer."
