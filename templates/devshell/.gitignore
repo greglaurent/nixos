@@ -1,0 +1,11 @@
+# direnv cache
+/.direnv/
+
+# local secrets — loaded by .envrc (dotenv_if_exists). NEVER commit these.
+.env
+.env.local
+*.env
+
+# nix build outputs
+result
+result-*
