@@ -7,7 +7,16 @@
     doomDir = ./doom;
     doomLocalDir = "${config.home.homeDirectory}/.local/share/nix-doom";
     emacs = pkgs.emacs-pgtk;                        # native Wayland (niri)
-    extraPackages = epkgs: [ epkgs.typst-ts-mode ];
+    extraPackages = epkgs: [
+      epkgs.typst-ts-mode
+      # typst-ts-mode needs the typst tree-sitter grammar; without it the mode
+      # errors during init (parser creation fails *before* mode hooks run), so
+      # .typ buffers get no highlighting AND no wrapping. Shipping it here lands
+      # libtree-sitter-typst.so on Emacs' treesit search path
+      # (…-emacs-packages-deps/lib), which is what the "grammar unavailable"
+      # error was looking for.
+      (epkgs.treesit-grammars.with-grammars (g: [ g.tree-sitter-typst ]))
+    ];
   };
 
   # Spell-checker for Doom's `:checkers spell` module (it prefers aspell; the
