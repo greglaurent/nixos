@@ -85,7 +85,12 @@
 ;; of startup. If typst highlighting is needed, provide the grammar via Nix
 ;; (tree-sitter-grammars.tree-sitter-typst) on treesit-extra-load-path instead.
 (use-package! typst-ts-mode
-  :mode ("\\.typ\\'" . typst-ts-mode))
+  :mode ("\\.typ\\'" . typst-ts-mode)
+  ;; typst-ts-mode derives from prog-mode, which truncates rather than wraps, so
+  ;; each prose paragraph shows as one huge line. visual-line-mode soft-wraps at
+  ;; the window edge on word boundaries (built-in; the Doom :ui word-wrap module
+  ;; is disabled). It's display-only — no newlines are inserted in the file.
+  :hook (typst-ts-mode . visual-line-mode))
 
 (defun typst-pdf-revert-visible ()
   "After saving a .typ file, revert every visible pdf-view buffer."
