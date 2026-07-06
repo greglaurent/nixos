@@ -58,7 +58,7 @@
 ;; (package! typst-ts-mode :recipe (:host codeberg :repo "meow_king/typst-ts-mode"))
 (package! nov)
 (package! org-noter)
-(package! empv)   ; control mpv from Emacs (video/audio/youtube)
+(package! empv)   ; control mpv from Emacs (play URLs/local files/directories)
 
 (provide 'packages)
 ;;; packages.el ends here
