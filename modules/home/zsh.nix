@@ -32,6 +32,4 @@
   };
 
   programs.starship.enable = true;
-
-  home.sessionVariables.DOCKER_HOST = "unix://$HOME/.config/containers/podman/podman.sock";
 }

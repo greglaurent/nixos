@@ -6,5 +6,6 @@
     ./virtualisation.nix
     ./desktop
     ./gaming.nix
+    ./podman.nix
   ];
 }

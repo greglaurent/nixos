@@ -22,4 +22,5 @@
   myDesktop.environment = "niri";
   myUsers = [ "greg" ];
   myGaming.enable = true;
+  myPodman.enable = true;
 }
