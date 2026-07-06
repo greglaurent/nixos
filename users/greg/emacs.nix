@@ -12,6 +12,13 @@
     extraPackages = epkgs: [ epkgs.typst-ts-mode ];
   };
 
+  # Spell-checker for Doom's `:checkers spell` module (it prefers aspell; the
+  # "can't find ispell" warning means no checker was on PATH). en-computers/
+  # en-science extend coverage for code and technical prose.
+  home.packages = with pkgs; [
+    (aspellWithDicts (d: with d; [ en en-computers en-science ]))
+  ];
+
   # Emacs daemon (user service), ordered after graphical-session.
   services.emacs = {
     enable = true;
