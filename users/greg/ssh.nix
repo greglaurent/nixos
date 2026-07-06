@@ -18,7 +18,7 @@
         HostName = "FORGEJO_HOSTNAME";
         User = "git";
         # Port = 2222;
-        IdentityFile = "~/.ssh/id_ed25519";
+        IdentityFile = "~/.ssh/gh_personal.pub";
         IdentitiesOnly = true;
       };
     };
