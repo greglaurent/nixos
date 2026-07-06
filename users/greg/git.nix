@@ -1,6 +1,3 @@
-# greg's git identity layer. Pulls in the shared base and adds his personal
-# name/email as the default. Per-company overrides go in `includes` (git's
-# runtime `includeIf`), keyed by the directory a repo lives under.
 { ... }:
 {
   imports = [ ../../modules/home/git.nix ];
