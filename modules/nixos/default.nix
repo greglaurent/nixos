@@ -5,5 +5,6 @@
     ./users.nix
     ./virtualisation.nix
     ./desktop
+    ./gaming.nix
   ];
 }

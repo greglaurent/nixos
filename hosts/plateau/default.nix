@@ -21,4 +21,5 @@
 
   myDesktop.environment = "niri";
   myUsers = [ "greg" ];
+  myGaming.enable = true;
 }
