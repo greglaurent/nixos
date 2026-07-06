@@ -69,7 +69,7 @@
   programs.zsh.enable = true;
 
   environment.sessionVariables = {
-    EDITOR = "nvim";
+    EDITOR = "emacs";
     BROWSER = "firefox";
     NIXOS_OZONE_WL = "1";
   };

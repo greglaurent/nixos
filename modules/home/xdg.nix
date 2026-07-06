@@ -25,6 +25,10 @@ in
 
   home.sessionVariables.XDG_DOCUMENTS_DIR = config.xdg.userDirs.documents;
 
+  home.sessionVariables = {
+    BROWSER = "vivaldi";
+  };
+
   # Default applications for GUI link/file opening (xdg-open, clicked links).
   # MIME-type keys are stable (freedesktop shared-mime-info); the .desktop
   # values must match files under …/share/applications/. Rows with no installed
@@ -33,7 +37,7 @@ in
     enable = true;
     defaultApplications =
       let
-        browser = "firefox.desktop";
+        browser = "vivaldi.desktop";
         video   = "mpv.desktop";
         audio   = "vlc.desktop";
         files   = "org.gnome.Nautilus.desktop";
