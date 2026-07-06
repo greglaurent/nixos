@@ -23,4 +23,5 @@
   myUsers = [ "greg" ];
   myGaming.enable = true;
   myPodman.enable = true;
+  myObsbot.enable = true;
 }

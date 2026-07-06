@@ -7,5 +7,6 @@
     ./desktop
     ./gaming.nix
     ./podman.nix
+    ./obsbot.nix
   ];
 }

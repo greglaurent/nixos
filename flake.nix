@@ -29,6 +29,7 @@
     flakePkgs = final: prev: {
       zen-browser = zen-browser.packages.${system}.default;
       claude-desktop = claude-desktop.packages.${system}.claude-desktop-fhs;
+      obsbot-camera-control = final.callPackage ./pkgs/obsbot-camera-control { };
     };
 
     mkHost = host: nixpkgs.lib.nixosSystem {
