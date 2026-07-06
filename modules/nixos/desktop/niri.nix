@@ -18,10 +18,14 @@
     # External-monitor brightness for the DMS brightness widget (ddcutil/i2c).
     # The native dms-shell module defaults this on; our flake wiring doesn't.
     hardware.i2c.enable = true;
-    # X11-only apps under niri. niri 26.04 manages xwayland-satellite natively
-    # via the `xwayland-satellite` node in config.kdl (PATH lookup); this puts
-    # the binary on PATH for it.
-    environment.systemPackages = [ pkgs.xwayland-satellite ];
+    environment.systemPackages = with pkgs; [
+      # X11-only apps under niri. niri 26.04 manages xwayland-satellite natively
+      # via the `xwayland-satellite` node in config.kdl (PATH lookup); this puts
+      # the binary on PATH for it.
+      xwayland-satellite
+      # Audio control panel — config.kdl already has a window-rule for it.
+      pavucontrol
+    ];
 
     programs.dank-material-shell.greeter = {
       enable = true;

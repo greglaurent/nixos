@@ -42,6 +42,7 @@
     # ── Other Utils ──
     # default: localsend
     pkgs.satty
+    pkgs.mission-center      # GTK4 system/resource monitor (task-manager style)
 
     # ── AI ──  
     pkgs.claude-code
