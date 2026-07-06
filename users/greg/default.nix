@@ -12,6 +12,7 @@ in {
     ../../modules/home/xdg.nix
     ../../modules/home/zsh.nix
     ./ssh.nix
+    ./git.nix
     ./hosts/${host}.nix
   ];
 
