@@ -28,6 +28,11 @@
     # so real terminals keep the (occasionally useful) marker.
     initContent = ''
       [[ -n "$INSIDE_EMACS" ]] && export PROMPT_EOL_MARK=""
+
+      # zsh-autosuggestions' default highlight (fg=8) is near-invisible on many
+      # themes, so suggestions look "missing". Use a readable mid-grey. Read
+      # lazily by the plugin at display time, so setting it here is fine.
+      ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=245"
     '';
   };
 
