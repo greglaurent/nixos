@@ -10,6 +10,10 @@
 {
   programs.kitty = {
     enable = true;
+    # xero's "sourcerer" palette, pulled by name from the bundled kitty-themes
+    # collection. The upstream Sourcerer.conf matches xero's original Xresources
+    # exactly (bg #222222, fg #c2c2b0, all 16 ANSI colors).
+    themeFile = "Sourcerer";
     settings = {
       enable_audio_bell = "no"; # the actual noise source
       window_alert_on_bell = "no"; # no urgency flash to the compositor
