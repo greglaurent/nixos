@@ -123,11 +123,24 @@
 (use-package! nov
   :mode ("\\.epub\\'" . nov-mode))
 
-;; org lives in $XDG_DOCUMENTS_DIR/org (currently ~/Media/Documents/org).
-;; Derived from the env var (exported by Home Manager) so it follows the XDG
-;; dir and never breaks on a future move.
+;; Org/agenda location is defined in nix (modules/home/org.nix -> myOrgDir,
+;; default <XDG documents>/org) and exported as $ORG_DIRECTORY. Read it here so
+;; there's no hardcoded path; fall back to the XDG documents dir if the env var
+;; is somehow unset. Change the location in nix, never here.
 (setq org-directory
-      (expand-file-name "org" (or (getenv "XDG_DOCUMENTS_DIR") "~/Media/Documents")))
+      (or (getenv "ORG_DIRECTORY")
+          (expand-file-name "org" (or (getenv "XDG_DOCUMENTS_DIR") "~/Media/Documents"))))
+;; Agenda-file REGISTRY: org's *file-based* `org-agenda-files' — a plain text
+;; file (one path per line) inside the org dir. It's seeded with org-directory
+;; itself, so every .org there auto-includes; `C-c [' / `C-c ]' register or
+;; unregister files FROM ANYWHERE by writing lines to THIS file — never
+;; custom.el. Entries absent on a given machine are skipped, not errored.
+(unless (file-directory-p org-directory)
+  (ignore-errors (make-directory org-directory t)))
+(setq org-agenda-files (expand-file-name ".agenda-files" org-directory))
+(unless (file-exists-p org-agenda-files)
+  (ignore-errors (with-temp-file org-agenda-files (insert org-directory "\n"))))
+(setq org-agenda-skip-unavailable-files t)
 (use-package! org-noter
   :config
   (setq org-noter-notes-search-path (list (expand-file-name "noter" org-directory))))
@@ -154,14 +167,59 @@
 ;; `SPC f p' / `SPC f P' (find/browse private config) open an uneditable path.
 ;; Point them at the real editable source that home-manager tangles into the
 ;; store. Edit here, then `home-manager switch' to apply.
-(defvar +doom-source-dir (expand-file-name "~/.config/nixos/users/greg/doom/")
-  "Editable source of this Doom config (copied into the store by home-manager).")
+(defvar +doom-source-dir
+  (file-name-as-directory
+   (or (getenv "DOOM_SOURCE_DIR")
+       (expand-file-name "~/.config/nixos/users/greg/doom")))
+  "Editable source of this Doom config (a writable git checkout; home-manager
+tangles it into the read-only store). Comes from nix via $DOOM_SOURCE_DIR
+(emacs.nix, derived from myFlakeRoot) so no path is hardcoded here.")
 
 (map! :leader
       :desc "Find file in Doom config (source)" "f p"
       (cmd! (doom-project-find-file +doom-source-dir))
       :desc "Browse Doom config (source)"       "f P"
       (cmd! (dired +doom-source-dir)))
+
+;; ── nix-doom read-only DOOMDIR: route every writable-state target ────────────
+;; nix-doom builds DOOMDIR into the read-only /nix/store, so anything that writes
+;; back into it fails with "Read-only file system". Two kinds of writes, routed
+;; by intent:
+;;   • runtime state you don't curate (customize saves, themes) ->
+;;     doom-data-dir: writable, persistent, machine-local.
+;;   • config you AUTHOR (snippets, file-templates, abbrevs) -> the flake source
+;;     (+doom-source-dir): a writable git checkout — version-controlled, loaded
+;;     live, resolved by `nixos-rebuild switch'. NEVER ~/.local, never the store.
+;; (load-path / doom-module-load-path / doom-user-dir itself are read-only
+;; *resources*, correctly immutable.)
+
+;; 1. customize saves: `M-x customize' "save for future sessions" writes here.
+;;    (Agenda files do NOT use this — they live in $ORG_DIRECTORY/.agenda-files
+;;    via org's file-based org-agenda-files; see the org section below.)
+(setq custom-file (expand-file-name "custom.el" doom-data-dir))
+(when (file-exists-p custom-file)
+  (load custom-file nil 'nomessage))
+
+;; 2. yasnippet + file-templates. New snippets/templates author DIRECTLY into the
+;;    flake source (writable checkout) — so `yas-new-snippet' lands in the repo,
+;;    version-controlled, loaded live (no rebuild to use it; `git commit' to keep
+;;    it). Doom's built-in snippets (doom-snippets-dir) and the 90 built-in
+;;    file-templates (+file-templates-dir, read-only module) are left intact.
+(setq +snippets-dir (expand-file-name "snippets/" +doom-source-dir))
+(after! yasnippet
+  ;; user file-templates live in the flake too; appended so +snippets-dir stays
+  ;; the default target for `yas-new-snippet'.
+  (add-to-list 'yas-snippet-dirs (expand-file-name "file-templates/" +doom-source-dir) :append))
+
+;; 3. themes saved/customized from within Emacs.
+(setq custom-theme-directory (expand-file-name "themes/" doom-data-dir))
+
+;; 4. abbrevs — authored data like snippets, so `save-abbrevs' (on exit / `M-x
+;;    write-abbrev-file') writes into the flake source (version-controlled), not
+;;    ~/.local. Created on first save; `git commit' to keep it.
+(setq abbrev-file-name (expand-file-name "abbrev_defs" +doom-source-dir))
+(when (file-exists-p abbrev-file-name)
+  (ignore-errors (quietly-read-abbrev-file abbrev-file-name)))
 
 ;; nix-doom-emacs-unstraightened builds Doom into a read-only /nix/store profile.
 ;; The elisp syntax checker validates a file by byte-compiling it in a subprocess;

@@ -22,6 +22,12 @@
   # Spell-checker for Doom's `:checkers spell` module (it prefers aspell; the
   # "can't find ispell" warning means no checker was on PATH). en-computers/
   # en-science extend coverage for code and technical prose.
+  # Where the editable Doom source lives (a writable git checkout), so Emacs can
+  # author snippets/file-templates straight into the flake — version-controlled,
+  # not the read-only store. Derived from myFlakeRoot; no hardcoded path.
+  home.sessionVariables.DOOM_SOURCE_DIR =
+    "${config.myFlakeRoot}/users/${config.home.username}/doom";
+
   home.packages = with pkgs; [
     (aspellWithDicts (d: with d; [ en en-computers en-science ]))
   ];
