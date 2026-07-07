@@ -1,10 +1,22 @@
-{ config, pkgs, doom-emacs, ... }:
+{ config, lib, pkgs, doom-emacs, ... }:
 {
   imports = [ doom-emacs.homeModule ];
 
   programs.doom-emacs = {
     enable = true;
-    doomDir = ./doom;
+    # Build Doom from the config .el only. EXCLUDE the authored-data dirs so
+    # editing a snippet / template / abbrev / org note is NOT a build input and
+    # never triggers a Doom rebuild — they still live under users/<name>/doom/ in
+    # the checkout and are read at runtime (via $DOOM_SOURCE_DIR / $ORG_DIRECTORY).
+    doomDir = lib.fileset.toSource {
+      root = ./doom;
+      fileset = lib.fileset.difference ./doom (lib.fileset.unions [
+        (lib.fileset.maybeMissing ./doom/org)
+        (lib.fileset.maybeMissing ./doom/snippets)
+        (lib.fileset.maybeMissing ./doom/file-templates)
+        (lib.fileset.maybeMissing ./doom/abbrev_defs)
+      ]);
+    };
     doomLocalDir = "${config.home.homeDirectory}/.local/share/nix-doom";
     emacs = pkgs.emacs-pgtk;                        # native Wayland (niri)
     extraPackages = epkgs: [
@@ -19,15 +31,14 @@
     ];
   };
 
+  # The editable Doom source in the flake checkout (writable, version-controlled)
+  # — where Emacs authors snippets/file-templates/abbrevs/org, read at runtime.
+  # Single generic source of truth (myDoomDir); no hardcoded path or username.
+  home.sessionVariables.DOOM_SOURCE_DIR = config.myDoomDir;
+
   # Spell-checker for Doom's `:checkers spell` module (it prefers aspell; the
   # "can't find ispell" warning means no checker was on PATH). en-computers/
   # en-science extend coverage for code and technical prose.
-  # Where the editable Doom source lives (a writable git checkout), so Emacs can
-  # author snippets/file-templates straight into the flake — version-controlled,
-  # not the read-only store. Derived from myFlakeRoot; no hardcoded path.
-  home.sessionVariables.DOOM_SOURCE_DIR =
-    "${config.myFlakeRoot}/users/${config.home.username}/doom";
-
   home.packages = with pkgs; [
     (aspellWithDicts (d: with d; [ en en-computers en-science ]))
   ];
