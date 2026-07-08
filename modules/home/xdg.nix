@@ -10,10 +10,10 @@ in
 
     desktop  = "${home}/Desktop";
     download = "${home}/Downloads";
-    documents = "${home}/Media/Documents";
+    documents = "${home}/Documents";
     music     = "${home}/Media/Music";
-    pictures  = "${home}/Media/Pictures";
     videos    = "${home}/Media/Videos";
+    pictures  = "${home}/Media/Pictures";
 
     templates   = home;
     publicShare = home;
@@ -23,10 +23,12 @@ in
     };
   };
 
-  home.sessionVariables.XDG_DOCUMENTS_DIR = config.xdg.userDirs.documents;
-
   home.sessionVariables = {
     BROWSER = "vivaldi";
+    XDG_MUSIC_DIR = config.xdg.userDirs.music;
+    XDG_VIDEOS_DIR = config.xdg.userDirs.videos;
+    XDG_PICTURES_DIR = config.xdg.userDirs.pictures;
+    XDG_DOCUMENTS_DIR = config.xdg.userDirs.documents;
   };
 
   # Default applications for GUI link/file opening (xdg-open, clicked links).
