@@ -124,9 +124,11 @@
   :mode ("\\.epub\\'" . nov-mode))
 
 ;; Org/agenda location is defined in nix (modules/home/org.nix -> myOrgDir,
-;; default <XDG documents>/org) and exported as $ORG_DIRECTORY. Read it here so
-;; there's no hardcoded path; fall back to the XDG documents dir if the env var
-;; is somehow unset. Change the location in nix, never here.
+;; default <myDoomContentDir>/org, i.e. users/<name>/content/doom/org — the
+;; authored-content half of the dots/content split) and exported as
+;; $ORG_DIRECTORY. Read it here so there's no hardcoded path; fall back to the
+;; XDG documents dir if the env var is somehow unset. Change the location in nix,
+;; never here.
 (setq org-directory
       (or (getenv "ORG_DIRECTORY")
           (expand-file-name "org" (or (getenv "XDG_DOCUMENTS_DIR") "~/Media/Documents"))))
@@ -167,13 +169,27 @@
 ;; `SPC f p' / `SPC f P' (find/browse private config) open an uneditable path.
 ;; Point them at the real editable source that home-manager tangles into the
 ;; store. Edit here, then `home-manager switch' to apply.
+;;
+;; Two writable trees, per the dots/content standard:
+;;   • +doom-source-dir  -> dots/doom    ($DOOM_CONFIG_DIR): the reproducible .el
+;;     config (a build input). Editing it needs a rebuild.
+;;   • +doom-content-dir -> content/doom ($DOOM_CONTENT_DIR): authored, tracked,
+;;     NOT built — snippets, file-templates, abbrevs. Loaded live, no rebuild.
 (defvar +doom-source-dir
   (file-name-as-directory
-   (or (getenv "DOOM_SOURCE_DIR")
-       (expand-file-name "~/.config/nixos/users/greg/doom")))
-  "Editable source of this Doom config (a writable git checkout; home-manager
-tangles it into the read-only store). Comes from nix via $DOOM_SOURCE_DIR
-(emacs.nix, derived from myFlakeRoot) so no path is hardcoded here.")
+   (or (getenv "DOOM_CONFIG_DIR")
+       (expand-file-name "~/.config/nixos/users/greg/dots/doom")))
+  "Editable source of this Doom *config* — the reproducible .el, a writable git
+checkout that home-manager tangles into the read-only store. From nix via
+$DOOM_CONFIG_DIR (emacs.nix) so no path is hardcoded here.")
+
+(defvar +doom-content-dir
+  (file-name-as-directory
+   (or (getenv "DOOM_CONTENT_DIR")
+       (expand-file-name "~/.config/nixos/users/greg/content/doom")))
+  "Authored, tracked-but-not-built Doom content (snippets, file-templates,
+abbrevs). From nix via $DOOM_CONTENT_DIR (emacs.nix) so no path is hardcoded
+here.")
 
 (map! :leader
       :desc "Find file in Doom config (source)" "f p"
@@ -187,9 +203,10 @@ tangles it into the read-only store). Comes from nix via $DOOM_SOURCE_DIR
 ;; by intent:
 ;;   • runtime state you don't curate (customize saves, themes) ->
 ;;     doom-data-dir: writable, persistent, machine-local.
-;;   • config you AUTHOR (snippets, file-templates, abbrevs) -> the flake source
-;;     (+doom-source-dir): a writable git checkout — version-controlled, loaded
-;;     live, resolved by `nixos-rebuild switch'. NEVER ~/.local, never the store.
+;;   • content you AUTHOR (snippets, file-templates, abbrevs) -> content/doom
+;;     (+doom-content-dir): a writable, tracked git checkout — version-controlled,
+;;     loaded live, resolved by `nixos-rebuild switch'. NEVER ~/.local, never the
+;;     store, never the reproducible dots/doom tree.
 ;; (load-path / doom-module-load-path / doom-user-dir itself are read-only
 ;; *resources*, correctly immutable.)
 
@@ -205,11 +222,11 @@ tangles it into the read-only store). Comes from nix via $DOOM_SOURCE_DIR
 ;;    version-controlled, loaded live (no rebuild to use it; `git commit' to keep
 ;;    it). Doom's built-in snippets (doom-snippets-dir) and the 90 built-in
 ;;    file-templates (+file-templates-dir, read-only module) are left intact.
-(setq +snippets-dir (expand-file-name "snippets/" +doom-source-dir))
+(setq +snippets-dir (expand-file-name "snippets/" +doom-content-dir))
 (after! yasnippet
   ;; user file-templates live in the flake too; appended so +snippets-dir stays
   ;; the default target for `yas-new-snippet'.
-  (add-to-list 'yas-snippet-dirs (expand-file-name "file-templates/" +doom-source-dir) :append))
+  (add-to-list 'yas-snippet-dirs (expand-file-name "file-templates/" +doom-content-dir) :append))
 
 ;; 3. themes saved/customized from within Emacs.
 (setq custom-theme-directory (expand-file-name "themes/" doom-data-dir))
@@ -217,7 +234,7 @@ tangles it into the read-only store). Comes from nix via $DOOM_SOURCE_DIR
 ;; 4. abbrevs — authored data like snippets, so `save-abbrevs' (on exit / `M-x
 ;;    write-abbrev-file') writes into the flake source (version-controlled), not
 ;;    ~/.local. Created on first save; `git commit' to keep it.
-(setq abbrev-file-name (expand-file-name "abbrev_defs" +doom-source-dir))
+(setq abbrev-file-name (expand-file-name "abbrev_defs" +doom-content-dir))
 (when (file-exists-p abbrev-file-name)
   (ignore-errors (quietly-read-abbrev-file abbrev-file-name)))
 

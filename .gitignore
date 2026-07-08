@@ -1,0 +1,3 @@
+# Machine-local org-agenda registry: absolute paths, regenerated when missing
+# (users/greg/dots/doom/config.el seeds it from $ORG_DIRECTORY). Not portable → not tracked.
+users/greg/content/doom/org/.agenda-files

@@ -64,15 +64,17 @@
           nautilus                      # DMS's window-rules target org.gnome.Nautilus
         ];
 
+        # Reproducible config (dots): symlinked read-only from the store.
         xdg.configFile."niri/config.kdl".source = ../../../dots/niri/config.kdl;
-        # Seed the dms/*.kdl includes from the repo so a fresh machine boots
-        # with a valid config. COPY (not symlink) and make writable, so DMS
-        # still owns/regenerates them at runtime. Only seed missing files —
-        # never clobber DMS's live versions on an existing machine.
+        # Seed (seed/): the repo ships dms/*.kdl as an initial default, but DMS
+        # OWNS and regenerates them at runtime — so COPY (not symlink), make
+        # writable, and seed only-if-missing (never clobber DMS's live versions).
+        # The live copies diverge and are never tracked back; hence seed/, not
+        # dots/ (immutable) or content/ (authored + tracked).
         home.activation.seedNiriDmsIncludes =
           lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             run mkdir -p "$HOME/.config/niri/dms"
-            for f in ${../../../dots/niri/dms}/*.kdl; do
+            for f in ${../../../seed/niri/dms}/*.kdl; do
               dest="$HOME/.config/niri/dms/$(basename "$f")"
               if [ ! -e "$dest" ]; then
                 run cp "$f" "$dest"

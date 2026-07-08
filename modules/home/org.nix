@@ -1,17 +1,18 @@
-# Org/agenda data location — ONE configurable source of truth, fully generic.
-# Defaults to users/<name>/doom/org (under myDoomDir), so all of Emacs's authored
-# data lives under one folder in the writable git checkout — version-controlled
-# and travelling with the config. Nothing hardcoded: derived from myDoomDir
-# (myFlakeRoot + config.home.username). Override `myOrgDir` to relocate it.
+# Org/agenda data location — ONE configurable source of truth. Defaults to
+# content/doom/org (under myDoomContentDir), so org lives in the authored-content
+# half of the dots/content split: version-controlled, travelling with the config,
+# but NOT a build input. Nothing hardcoded: derived from myDoomContentDir
+# (emacs.nix) which derives from the standard myContentDir (paths.nix). Override
+# `myOrgDir` to relocate it.
 #
 # The value is exported as $ORG_DIRECTORY and Emacs reads that
-# (users/greg/doom/config.el) — no path in the elisp. The dir plus the roam/ and
-# noter/ subdirs the doom config uses are created if missing.
+# (users/greg/dots/doom/config.el) — no path in the elisp. The dir plus the roam/
+# and noter/ subdirs the doom config uses are created if missing.
 { config, lib, ... }:
 {
   options.myOrgDir = lib.mkOption {
     type = lib.types.str;
-    default = "${config.myDoomDir}/org";
+    default = "${config.myDoomContentDir}/org";
     example = "\${config.xdg.userDirs.documents}/org";
     description = "Directory holding org-mode / agenda files. Exported as $ORG_DIRECTORY.";
   };

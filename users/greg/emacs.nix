@@ -2,50 +2,65 @@
 {
   imports = [ doom-emacs.homeModule ];
 
-  programs.doom-emacs = {
-    enable = true;
-    # Build Doom from the config .el only. EXCLUDE the authored-data dirs so
-    # editing a snippet / template / abbrev / org note is NOT a build input and
-    # never triggers a Doom rebuild — they still live under users/<name>/doom/ in
-    # the checkout and are read at runtime (via $DOOM_SOURCE_DIR / $ORG_DIRECTORY).
-    doomDir = lib.fileset.toSource {
-      root = ./doom;
-      fileset = lib.fileset.difference ./doom (lib.fileset.unions [
-        (lib.fileset.maybeMissing ./doom/org)
-        (lib.fileset.maybeMissing ./doom/snippets)
-        (lib.fileset.maybeMissing ./doom/file-templates)
-        (lib.fileset.maybeMissing ./doom/abbrev_defs)
-      ]);
-    };
-    doomLocalDir = "${config.home.homeDirectory}/.local/share/nix-doom";
-    emacs = pkgs.emacs-pgtk;                        # native Wayland (niri)
-    extraPackages = epkgs: [
-      epkgs.typst-ts-mode
-      # typst-ts-mode needs the typst tree-sitter grammar; without it the mode
-      # errors during init (parser creation fails *before* mode hooks run), so
-      # .typ buffers get no highlighting AND no wrapping. Shipping it here lands
-      # libtree-sitter-typst.so on Emacs' treesit search path
-      # (…-emacs-packages-deps/lib), which is what the "grammar unavailable"
-      # error was looking for.
-      (epkgs.treesit-grammars.with-grammars (g: [ g.tree-sitter-typst ]))
-    ];
+  # Doom's two dirs under the dots/content standard (paths.nix). Both are per-app
+  # override points, defaulting to the standard <root>/doom location:
+  #   • config  -> dots/doom:    reproducible .el, the Doom build input.
+  #   • content -> content/doom: authored, tracked, NOT built (snippets,
+  #     file-templates, abbrevs, org). Editing it never triggers a rebuild.
+  options.myDoomConfigDir = lib.mkOption {
+    type = lib.types.str;
+    default = "${config.myDotsDir}/doom";
+    description = "Reproducible Doom config (the .el build input); dots/doom.";
+  };
+  options.myDoomContentDir = lib.mkOption {
+    type = lib.types.str;
+    default = "${config.myContentDir}/doom";
+    description = "Authored, tracked-but-not-built Doom content; content/doom.";
   };
 
-  # The editable Doom source in the flake checkout (writable, version-controlled)
-  # — where Emacs authors snippets/file-templates/abbrevs/org, read at runtime.
-  # Single generic source of truth (myDoomDir); no hardcoded path or username.
-  home.sessionVariables.DOOM_SOURCE_DIR = config.myDoomDir;
+  config = {
+    programs.doom-emacs = {
+      enable = true;
+      # doomDir is the reproducible dots/doom tree, whole and unfiltered. The
+      # split is topological now, so there's nothing to exclude: authored content
+      # physically lives in content/doom, a different tree that is never a build
+      # input. Editing an .el here needs `home-manager switch'; editing content
+      # does not.
+      doomDir = ./dots/doom;
+      doomLocalDir = "${config.home.homeDirectory}/.local/share/nix-doom";
+      emacs = pkgs.emacs-pgtk;                        # native Wayland (niri)
+      extraPackages = epkgs: [
+        epkgs.typst-ts-mode
+        # typst-ts-mode needs the typst tree-sitter grammar; without it the mode
+        # errors during init (parser creation fails *before* mode hooks run), so
+        # .typ buffers get no highlighting AND no wrapping. Shipping it here lands
+        # libtree-sitter-typst.so on Emacs' treesit search path
+        # (…-emacs-packages-deps/lib), which is what the "grammar unavailable"
+        # error was looking for.
+        (epkgs.treesit-grammars.with-grammars (g: [ g.tree-sitter-typst ]))
+      ];
+    };
 
-  # Spell-checker for Doom's `:checkers spell` module (it prefers aspell; the
-  # "can't find ispell" warning means no checker was on PATH). en-computers/
-  # en-science extend coverage for code and technical prose.
-  home.packages = with pkgs; [
-    (aspellWithDicts (d: with d; [ en en-computers en-science ]))
-  ];
+    # Emacs reads these at runtime (config.el) to route editing/authoring to the
+    # writable checkout: $DOOM_CONFIG_DIR for the reproducible .el (dots/doom),
+    # $DOOM_CONTENT_DIR for authored snippets/templates/abbrevs (content/doom).
+    # No paths hardcoded in elisp.
+    home.sessionVariables = {
+      DOOM_CONFIG_DIR = config.myDoomConfigDir;
+      DOOM_CONTENT_DIR = config.myDoomContentDir;
+    };
 
-  # Emacs daemon (user service), ordered after graphical-session.
-  services.emacs = {
-    enable = true;
-    defaultEditor = false;  # keep nvim as $EDITOR for now; flip to emacs later
+    # Spell-checker for Doom's `:checkers spell` module (it prefers aspell; the
+    # "can't find ispell" warning means no checker was on PATH). en-computers/
+    # en-science extend coverage for code and technical prose.
+    home.packages = with pkgs; [
+      (aspellWithDicts (d: with d; [ en en-computers en-science ]))
+    ];
+
+    # Emacs daemon (user service), ordered after graphical-session.
+    services.emacs = {
+      enable = true;
+      defaultEditor = false;  # keep nvim as $EDITOR for now; flip to emacs later
+    };
   };
 }
