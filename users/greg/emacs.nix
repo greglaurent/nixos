@@ -62,5 +62,18 @@
       enable = true;
       defaultEditor = false;  # keep nvim as $EDITOR for now; flip to emacs later
     };
+
+    # THE daemon is a systemd USER service — it does NOT inherit
+    # home.sessionVariables (those are sourced by interactive shells only). So a
+    # rebuild alone leaves the running daemon on STALE paths: it keeps resolving
+    # org-directory to the OLD location and re-seeding .agenda-files there every
+    # time org loads, which is why deleting the folder + rebuilding didn't stop
+    # it. Pin the paths on the unit itself so `systemctl --user restart emacs`
+    # gives the daemon the correct DOOM_*/ORG_DIRECTORY values deterministically.
+    systemd.user.services.emacs.Service.Environment = [
+      "DOOM_CONFIG_DIR=${config.myDoomConfigDir}"
+      "DOOM_CONTENT_DIR=${config.myDoomContentDir}"
+      "ORG_DIRECTORY=${config.myOrgDir}"
+    ];
   };
 }

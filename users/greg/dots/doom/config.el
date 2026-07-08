@@ -126,12 +126,20 @@
 ;; Org/agenda location is defined in nix (modules/home/org.nix -> myOrgDir,
 ;; default <myDoomContentDir>/org, i.e. users/<name>/content/doom/org — the
 ;; authored-content half of the dots/content split) and exported as
-;; $ORG_DIRECTORY. Read it here so there's no hardcoded path; fall back to the
-;; XDG documents dir if the env var is somehow unset. Change the location in nix,
-;; never here.
+;; $ORG_DIRECTORY. Prefer that env var; but a systemd/emacsclient daemon does not
+;; always receive it, so the fallbacks ALSO resolve to content/doom/org — never a
+;; dead path, and never a hardcoded user. Order: $ORG_DIRECTORY ->
+;; $DOOM_CONTENT_DIR/org -> a path derived from the RUNTIME username, mirroring
+;; how nix derives it (myFlakeRoot/users/<name>/content/doom). Change the real
+;; location in nix, never here.
 (setq org-directory
       (or (getenv "ORG_DIRECTORY")
-          (expand-file-name "org" (or (getenv "XDG_DOCUMENTS_DIR") "~/Media/Documents"))))
+          (expand-file-name
+           "org"
+           (or (getenv "DOOM_CONTENT_DIR")
+               (expand-file-name
+                (format "users/%s/content/doom" (user-login-name))
+                "~/.config/nixos")))))
 ;; Agenda-file REGISTRY: org's *file-based* `org-agenda-files' — a plain text
 ;; file (one path per line) inside the org dir. It's seeded with org-directory
 ;; itself, so every .org there auto-includes; `C-c [' / `C-c ]' register or
