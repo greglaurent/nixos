@@ -60,7 +60,9 @@
     # Emacs daemon (user service), ordered after graphical-session.
     services.emacs = {
       enable = true;
-      defaultEditor = false;  # keep nvim as $EDITOR for now; flip to emacs later
+      # greg's EDITOR = emacsclient (home-manager sets it via home.sessionVariables),
+      # overriding the system-wide nvim baseline in greg's interactive shells.
+      defaultEditor = true;
     };
 
     # THE daemon is a systemd USER service — it does NOT inherit

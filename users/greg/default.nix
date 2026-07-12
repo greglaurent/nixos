@@ -15,6 +15,7 @@ in {
     ../../modules/home/packages.nix
     ./emacs.nix
     ../../modules/home/xdg.nix
+    ./xdg.nix                      # greg's overrides of the xdg defaults
     ../../modules/home/zsh.nix
     ./ssh.nix
     ./git.nix

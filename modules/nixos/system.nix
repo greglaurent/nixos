@@ -69,8 +69,9 @@
   programs.zsh.enable = true;
 
   environment.sessionVariables = {
-    EDITOR = "emacs";
-    BROWSER = "firefox";
+    EDITOR = "nvim";   # system-wide baseline (root, sudoedit, any user, GUI fallback)
+    # BROWSER lives in the desktop layer (modules/nixos/desktop) — firefox only
+    # exists when a desktop is present; the base system carries no browser.
     NIXOS_OZONE_WL = "1";
   };
 

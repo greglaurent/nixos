@@ -20,6 +20,9 @@
       firefox
       localsend
     ];
+    # firefox is the desktop's default browser — present only when a desktop is
+    # active. A user overrides this in their home config (greg -> vivaldi).
+    environment.sessionVariables.BROWSER = "firefox";
     xdg.portal = {
       enable = true;
       extraPortals = with pkgs; [ xdg-desktop-portal-gtk ];
