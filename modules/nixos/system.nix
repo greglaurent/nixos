@@ -26,7 +26,6 @@
     efi.canTouchEfiVariables = true;
   };
 
-  services.printing.enable = true;
   services.fwupd.enable = true;
   services.automatic-timezoned.enable = true;
   services.pulseaudio.enable = false;

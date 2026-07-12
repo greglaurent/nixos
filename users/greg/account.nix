@@ -4,6 +4,6 @@
 { pkgs, ... }:
 {
   description = "Greg Laurent";
-  extraGroups = [ "networkmanager" "wheel" "video" "audio" "libvirtd" ];
+  extraGroups = [ "networkmanager" "wheel" "video" "audio" "libvirtd" "scanner" "lp" ];
   shell = pkgs.zsh;
 }

@@ -2,6 +2,7 @@
 {
   imports = [
     ./system.nix
+    ./printing.nix
     ./users.nix
     ./virtualisation.nix
     ./desktop
