@@ -34,6 +34,11 @@ in
       type = lib.types.str; default = "firefox.desktop";
       description = "Handler for Markdown files.";
     };
+    pdf      = lib.mkOption {
+      type = lib.types.str;
+      default = config.myXdgApps.browser;   # follow the browser unless overridden
+      description = "Handler for PDF files (defaults to the browser; override for a dedicated viewer).";
+    };
   };
 
   config = {
@@ -73,14 +78,20 @@ in
     xdg.mimeApps = {
       enable = true;
       defaultApplications =
+        # Each value is mkDefault, so a user can override ANY individual mime type
+        # directly — xdg.mimeApps.defaultApplications."image/svg+xml" = "x.desktop"
+        # — without needing a per-type option. The category options (myXdgApps.*)
+        # still change a whole group at once; a direct per-mime override wins over
+        # both. Everything here is overridable two ways; nothing is locked.
         let
-          browser  = config.myXdgApps.browser;
-          images   = config.myXdgApps.images;
-          video    = config.myXdgApps.video;
-          audio    = config.myXdgApps.audio;
-          files    = config.myXdgApps.files;
-          text     = config.myXdgApps.text;
-          markdown = config.myXdgApps.markdown;
+          browser  = lib.mkDefault config.myXdgApps.browser;
+          images   = lib.mkDefault config.myXdgApps.images;
+          video    = lib.mkDefault config.myXdgApps.video;
+          audio    = lib.mkDefault config.myXdgApps.audio;
+          files    = lib.mkDefault config.myXdgApps.files;
+          text     = lib.mkDefault config.myXdgApps.text;
+          markdown = lib.mkDefault config.myXdgApps.markdown;
+          pdf      = lib.mkDefault config.myXdgApps.pdf;
         in {
           # ── URL scheme handlers ──
           "x-scheme-handler/http"    = browser;
@@ -97,7 +108,7 @@ in
           "application/xhtml+xml" = browser;
 
           # ── PDF & e-books ──
-          "application/pdf" = browser;          # browsers have a PDF viewer
+          "application/pdf" = pdf;
           # "application/epub+zip"            = "…";
           # "application/x-mobipocket-ebook"  = "…";
 
@@ -114,31 +125,31 @@ in
           "image/avif"    = images;
 
           # ── Audio ──
-          "audio/mpeg"  = audio;   # mp3
+          "audio/mpeg"  = audio;
           "audio/flac"  = audio;
           "audio/ogg"   = audio;
           "audio/opus"  = audio;
           "audio/wav"   = audio;
           "audio/aac"   = audio;
-          "audio/mp4"   = audio;   # m4a
+          "audio/mp4"   = audio;
           "audio/x-m4a" = audio;
 
           # ── Video ──
           "video/mp4"        = video;
-          "video/x-matroska" = video;   # mkv
+          "video/x-matroska" = video;
           "video/webm"       = video;
-          "video/quicktime"  = video;   # mov
-          "video/x-msvideo"  = video;   # avi
+          "video/quicktime"  = video;
+          "video/x-msvideo"  = video;
           "video/mpeg"       = video;
           "video/3gpp"       = video;
 
           # ── Text / code ──
           "text/plain"       = text;
-          "text/markdown"    = markdown;
           "application/json" = text;
           "text/xml"         = text;
           "application/xml"  = text;
           "text/csv"         = text;
+          "text/markdown"    = markdown;
 
           # ── Directories ──
           "inode/directory" = files;
