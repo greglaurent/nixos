@@ -19,7 +19,7 @@ in
       description = "Handler for video files.";
     };
     audio    = lib.mkOption {
-      type = lib.types.str; default = "vlc.desktop";
+      type = lib.types.str; default = "mpv.desktop";
       description = "Handler for audio files.";
     };
     files    = lib.mkOption {
