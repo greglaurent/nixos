@@ -1,4 +1,4 @@
-{ ... }:
+{ config, ... }:
 {
   programs.zsh = {
     enable = true;
@@ -17,7 +17,9 @@
     };
 
     shellAliases = {
-      nix-rbs = "sudo nixos-rebuild switch --flake ~/.config/nixos#$(hostname)";
+      # Path from myFlakeRoot (single source of truth), host from $(hostname) at
+      # runtime — so the same alias rebuilds the right config on any machine.
+      nix-rbs = "sudo nixos-rebuild switch --flake ${config.myFlakeRoot}#$(hostname)";
       vim = "neovim";
       ec = "emacsclient -c -a ''";
       et = "emacsclient -t -a ''";
