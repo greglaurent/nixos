@@ -22,8 +22,9 @@
     noto-fonts-color-emoji
 
     # Document / typesetting text faces (cascade + dead-tongue). Lora is the
-    # serif body; Inter (above) is the sans. Just Lora is pulled from the Google
-    # Fonts collection to avoid installing the whole set.
+    # serif body; Inter (above) is the sans; Jost is the geometric-sans preset.
+    # Just Lora is pulled from the Google Fonts collection to avoid the whole set.
     (google-fonts.override { fonts = [ "Lora" ]; })
+    jost                     # geometric sans — cascade "jost" preset
   ];
 }
