@@ -35,22 +35,6 @@
   # to that group in users/greg/account.nix.
   hardware.uinput.enable = true;
 
-  # RustDesk background service. Its GUI errors "rustdesk.service does not exist"
-  # without this — NixOS doesn't register the systemd unit the upstream package
-  # would ship on other distros. `rustdesk --service` handles incoming
-  # connections; pairs with the uinput perms above and the gnome ScreenCast
-  # portal (desktop/default.nix) for remote view + control.
-  systemd.services.rustdesk = {
-    description = "RustDesk";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "network.target" ];
-    serviceConfig = {
-      Type = "simple";
-      ExecStart = "${pkgs.rustdesk}/bin/rustdesk --service";
-      Restart = "on-failure";
-    };
-  };
-
   services.pulseaudio.enable = false;
   services.pipewire = {
     enable = true;

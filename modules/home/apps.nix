@@ -44,7 +44,6 @@
     pkgs.satty
     pkgs.mission-center
     pkgs.cloudflared
-    pkgs.rustdesk            # remote desktop
 
     # ── Archives ── file-roller = GNOME Archive Manager: opens archives on
     # double-click in Nautilus and drives extract/compress dialogs. zip/unzip/

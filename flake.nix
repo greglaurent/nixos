@@ -1,9 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    # Tracks upstream more closely; used to pull individual packages that lag in
-    # the stable channel (currently: rustdesk 1.4.9 vs 26.05's 1.4.7).
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     home-manager = {
@@ -25,20 +22,14 @@
     claude-desktop.url = "github:aaddrick/claude-desktop-debian";
   };
 
-  outputs = { nixpkgs, nixpkgs-unstable, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, ... }:
+  outputs = { nixpkgs, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, ... }:
   let
     system = "x86_64-linux";
     hosts = [ "rhizome" "plateau" ];
-    pkgs-unstable = import nixpkgs-unstable {
-      inherit system;
-      config.allowUnfree = true;
-    };
     flakePkgs = final: prev: {
       zen-browser = zen-browser.packages.${system}.default;
       claude-desktop = claude-desktop.packages.${system}.claude-desktop-fhs;
       obsbot-camera-control = final.callPackage ./pkgs/obsbot-camera-control { };
-      # nixos-26.05 lags upstream rustdesk (1.4.7); pull the current one from unstable.
-      rustdesk = pkgs-unstable.rustdesk;
     };
 
     mkHost = host: nixpkgs.lib.nixosSystem {

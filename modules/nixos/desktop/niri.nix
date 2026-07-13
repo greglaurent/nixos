@@ -64,6 +64,24 @@
           nautilus                      # DMS's window-rules target org.gnome.Nautilus
         ];
 
+        # No polkit authentication agent ships with niri/DMS, so anything that
+        # needs privilege elevation via pkexec — RustDesk's "unlock security
+        # settings", gvfs mounts, etc. — fails SILENTLY (the prompt has no agent
+        # to display it; the button just does nothing). Run one for the session.
+        systemd.user.services.polkit-gnome-authentication-agent-1 = {
+          Unit = {
+            Description = "polkit authentication agent (GUI prompt for pkexec)";
+            After = [ "graphical-session.target" ];
+            PartOf = [ "graphical-session.target" ];
+          };
+          Service = {
+            Type = "simple";
+            ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+            Restart = "on-failure";
+          };
+          Install.WantedBy = [ "graphical-session.target" ];
+        };
+
         # Reproducible config (dots): symlinked read-only from the store.
         xdg.configFile."niri/config.kdl".source = ../../../dots/niri/config.kdl;
         # Custom/override keybinds, kept out of the DMS-owned dms/*.kdl so they
