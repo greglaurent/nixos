@@ -1,0 +1,12 @@
+// Custom niri keybinds — kept OUT of the DMS-managed dms/binds.kdl (which DMS
+// regenerates at runtime) so they stay declarative and are never clobbered.
+// niri MERGES binds across includes, and config.kdl includes this file AFTER
+// dms/binds.kdl, so any key here overrides DMS's binding for the same key.
+binds {
+    // Floating: DMS moved the float toggle to Mod+Shift+T. Restore Mod+T too
+    // (old muscle memory). Both work — delete this line to use only Mod+Shift+T.
+    Mod+T hotkey-overlay-title="Toggle Window Floating" { toggle-window-floating; }
+
+    // Add further custom/override window binds below, e.g.:
+    // Mod+Shift+Space { switch-focus-between-floating-and-tiling; }
+}

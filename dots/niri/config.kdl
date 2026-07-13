@@ -288,3 +288,5 @@ include "dms/alttab.kdl"
 include "dms/binds.kdl"
 include "dms/outputs.kdl"
 include "dms/cursor.kdl"
+// Custom/override binds — included LAST so they win over DMS for shared keys.
+include "binds.kdl"

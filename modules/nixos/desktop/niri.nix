@@ -66,6 +66,9 @@
 
         # Reproducible config (dots): symlinked read-only from the store.
         xdg.configFile."niri/config.kdl".source = ../../../dots/niri/config.kdl;
+        # Custom/override keybinds, kept out of the DMS-owned dms/*.kdl so they
+        # stay declarative and DMS never clobbers them.
+        xdg.configFile."niri/binds.kdl".source = ../../../dots/niri/binds.kdl;
         # Seed (seed/): the repo ships dms/*.kdl as an initial default, but DMS
         # OWNS and regenerates them at runtime — so COPY (not symlink), make
         # writable, and seed only-if-missing (never clobber DMS's live versions).
