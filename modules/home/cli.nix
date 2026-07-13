@@ -6,8 +6,7 @@
     just
     glances
     wget
-    unzip
-    unrar
+    # (archive tools — unzip/zip/p7zip/rar/file-roller — live in apps.nix)
     wl-clipboard
     cliphist
 

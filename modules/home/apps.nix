@@ -54,8 +54,7 @@
     pkgs.zip
     pkgs.unzip
     pkgs.p7zip
-    pkgs.unrar       # extract .rar (unfree)
-    pkgs.rar         # create .rar   (unfree)
+    pkgs.rar         # ships both `rar` (create) and `unrar` (extract); unfree
 
     # ── AI ──
     pkgs.claude-code
