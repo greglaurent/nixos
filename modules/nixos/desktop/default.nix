@@ -25,7 +25,16 @@
     environment.sessionVariables.BROWSER = "firefox";
     xdg.portal = {
       enable = true;
-      extraPortals = with pkgs; [ xdg-desktop-portal-gtk ];
+      # gtk = file chooser / open-uri; gnome = ScreenCast (screen sharing on
+      # niri — RustDesk, Zoom, OBS, browser calls). niri implements the Mutter
+      # ScreenCast/RemoteDesktop D-Bus that xdg-desktop-portal-gnome drives.
+      extraPortals = with pkgs; [ xdg-desktop-portal-gtk xdg-desktop-portal-gnome ];
+      # niri isn't a desktop xdg-desktop-portal recognises, so route interfaces
+      # explicitly for XDG_CURRENT_DESKTOP=niri: ScreenCast -> gnome, rest -> gtk.
+      config.niri = {
+        default = [ "gnome" "gtk" ];
+        "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+      };
     };
     fonts.packages = with pkgs; [ ];
     programs = {
