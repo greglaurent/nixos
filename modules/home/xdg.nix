@@ -39,6 +39,10 @@ in
       default = config.myXdgApps.browser;   # follow the browser unless overridden
       description = "Handler for PDF files (defaults to the browser; override for a dedicated viewer).";
     };
+    archive  = lib.mkOption {
+      type = lib.types.str; default = "org.gnome.FileRoller.desktop";
+      description = "Handler for archives (zip/tar/7z/rar/…). file-roller opens them on double-click; Nautilus's built-in Compress/Extract covers the rest.";
+    };
   };
 
   config = {
@@ -92,6 +96,7 @@ in
           text     = lib.mkDefault config.myXdgApps.text;
           markdown = lib.mkDefault config.myXdgApps.markdown;
           pdf      = lib.mkDefault config.myXdgApps.pdf;
+          archive  = lib.mkDefault config.myXdgApps.archive;
         in {
           # ── URL scheme handlers ──
           "x-scheme-handler/http"    = browser;
@@ -166,14 +171,17 @@ in
           # "application/vnd.openxmlformats-officedocument.presentationml.presentation" = "…";  # pptx
           # "application/rtf"                                                           = "…";
 
-          # ── Archives (no GUI archiver installed) ──
-          # "application/zip"              = "…";
-          # "application/x-tar"            = "…";
-          # "application/gzip"             = "…";
-          # "application/x-7z-compressed"  = "…";
-          # "application/vnd.rar"          = "…";
-          # "application/x-bzip2"          = "…";
-          # "application/x-xz"             = "…";
+          # ── Archives (file-roller = GNOME Archive Manager) ──
+          "application/zip"                   = archive;
+          "application/x-7z-compressed"       = archive;
+          "application/vnd.rar"               = archive;
+          "application/x-tar"                 = archive;
+          "application/x-compressed-tar"      = archive;  # .tar.gz
+          "application/x-xz-compressed-tar"   = archive;  # .tar.xz
+          "application/x-bzip-compressed-tar" = archive;  # .tar.bz2
+          "application/gzip"                  = archive;
+          "application/x-xz"                  = archive;
+          "application/x-bzip2"               = archive;
         };
     };
 

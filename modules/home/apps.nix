@@ -45,7 +45,19 @@
     pkgs.mission-center
     pkgs.cloudflared
 
-    # ── AI ──  
+    # ── Archives ── file-roller = GNOME Archive Manager: opens archives on
+    # double-click in Nautilus and drives extract/compress dialogs. zip/unzip/
+    # p7zip are the CLI backends it shells out to (and give you zip/unzip/7z on
+    # the command line). Nautilus's own Compress/Extract (gnome-autoar) covers
+    # right-click compress-a-folder without needing file-roller.
+    pkgs.file-roller
+    pkgs.zip
+    pkgs.unzip
+    pkgs.p7zip
+    pkgs.unrar       # extract .rar (unfree)
+    pkgs.rar         # create .rar   (unfree)
+
+    # ── AI ──
     pkgs.claude-code
     pkgs.claude-desktop      # flake overlay; FHS variant = MCP/Cowork
   ];
