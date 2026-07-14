@@ -48,6 +48,11 @@ let
     #    service, and capture child — reaches the host xdg-desktop-portal AND
     #    the host PipeWire socket. Setting only the GUI's bus left the capture
     #    child on the container bus ("portal.Desktop not provided").
+    #    GDK_BACKEND=x11 runs the Flutter GUI under XWayland — its native-Wayland
+    #    multi-window path segfaults on niri (gtk_window_is_maximized). Capture is
+    #    unaffected (RustDesk detects the display server from the session, not from
+    #    GDK_BACKEND), and RUSTDESK_FORCED_DISPLAY_SERVER=wayland pins it to the
+    #    portal capture path regardless.
     hostrun="/run/host/run/user/$(id -u)"
     exec distrobox enter rustdesk -- env \
       -u GIO_MODULE_DIR -u GIO_EXTRA_MODULES -u GDK_PIXBUF_MODULE_FILE \
@@ -56,6 +61,8 @@ let
       XDG_DATA_DIRS=/usr/local/share:/usr/share \
       XDG_RUNTIME_DIR="$hostrun" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=$hostrun/bus" \
+      GDK_BACKEND=x11 \
+      RUSTDESK_FORCED_DISPLAY_SERVER=wayland \
       rustdesk "$@"
   '';
 in
