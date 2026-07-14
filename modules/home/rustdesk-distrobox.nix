@@ -130,11 +130,37 @@ in
     '';
   };
 
+  # Container build steps (init_hooks). Shipped as a script to avoid quoting a
+  # long chain through the .ini. Runs as root at `distrobox assemble create`.
+  xdg.configFile."distrobox/rustdesk-build.sh" = {
+    executable = true;
+    text = ''
+      #!/bin/sh
+      # Build the RustDesk container. Arg 1 = host home directory.
+      set -e
+      home="''${1:-$HOME}"
+
+      # RustDesk itself.
+      wget -qO /tmp/rustdesk.deb "https://github.com/rustdesk/rustdesk/releases/download/1.4.9/rustdesk-1.4.9-x86_64.deb"
+      apt-get install -y /tmp/rustdesk.deb
+
+      # Ubuntu 22.04 ships libpipewire 0.3.48 — too old for RustDesk Wayland
+      # screen capture ("upgrade the PipeWire library", rustdesk #8600). Pull the
+      # upstream client libs so it can talk to the host's modern pipewire daemon.
+      add-apt-repository -y ppa:pipewire-debian/pipewire-upstream
+      apt-get update
+      apt-get install -y libpipewire-0.3-0 libpipewire-0.3-modules libspa-0.2-modules
+
+      # Host-browser URL integration (portal shim + GIO https handler).
+      sh "$home/.config/distrobox/rustdesk-integrate.sh" "$home"
+    '';
+  };
+
   xdg.configFile."distrobox/rustdesk.ini".text = ''
     [rustdesk]
     image=ubuntu:22.04
     init=true
-    additional_packages=wget desktop-file-utils python3 python3-dbus
-    init_hooks=wget -qO /tmp/rustdesk.deb "https://github.com/rustdesk/rustdesk/releases/download/1.4.9/rustdesk-1.4.9-x86_64.deb" && apt-get install -y /tmp/rustdesk.deb && sh ${home}/.config/distrobox/rustdesk-integrate.sh ${home} || true
+    additional_packages=wget desktop-file-utils python3 python3-dbus software-properties-common
+    init_hooks=sh ${home}/.config/distrobox/rustdesk-build.sh ${home} || true
   '';
 }
