@@ -25,7 +25,7 @@
 #
 # `rustdesk` on your PATH is the only command needed — it creates the container
 # on first run (needs network), wires up host integration, and launches.
-{ config, pkgs, ... }:
+{ config, pkgs, lib, osConfig, ... }:
 let
   home = config.home.homeDirectory;
   rustdesk = pkgs.writeShellScriptBin "rustdesk" ''
@@ -54,7 +54,9 @@ let
       rustdesk "$@"
   '';
 in
-{
+# Active only where the host turns on RustDesk (modules/nixos/rustdesk.nix);
+# inert everywhere else, so greg's home config is identical across all hosts.
+lib.mkIf (osConfig.myRustdesk.enable or false) {
   home.packages = [ pkgs.distrobox rustdesk ];
 
   # Menu entry launches the sanitised wrapper, not the container's own .desktop.

@@ -22,6 +22,6 @@
   myDesktop.environment = "niri";
   myUsers = [ "greg" ];
   myGaming.enable = true;
-  myPodman.enable = true;
+  myRustdesk.enable = true;         # remote desktop — pulls in rootless podman + uinput
   myObsbot.enable = true;
 }

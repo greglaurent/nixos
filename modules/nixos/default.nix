@@ -8,6 +8,7 @@
     ./desktop
     ./gaming.nix
     ./podman.nix
+    ./rustdesk.nix
     ./obsbot.nix
   ];
 }

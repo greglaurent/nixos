@@ -4,6 +4,8 @@
 { pkgs, ... }:
 {
   description = "Greg Laurent";
-  extraGroups = [ "networkmanager" "wheel" "video" "audio" "libvirtd" "scanner" "lp" "uinput" ];
+  # uinput is added conditionally by modules/nixos/rustdesk.nix when myRustdesk
+  # is enabled — don't hardcode it here (it wouldn't exist on non-RustDesk hosts).
+  extraGroups = [ "networkmanager" "wheel" "video" "audio" "libvirtd" "scanner" "lp" ];
   shell = pkgs.zsh;
 }

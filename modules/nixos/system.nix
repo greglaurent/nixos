@@ -29,12 +29,6 @@
   services.fwupd.enable = true;
   services.automatic-timezoned.enable = true;
 
-  # uinput: lets RustDesk inject keyboard/mouse into the Wayland (niri) session
-  # for remote *control* (Wayland blocks synthetic input otherwise). Creates the
-  # `uinput` group + a udev rule granting it 0660 on /dev/uinput; greg is added
-  # to that group in users/greg/account.nix.
-  hardware.uinput.enable = true;
-
   services.pulseaudio.enable = false;
   services.pipewire = {
     enable = true;

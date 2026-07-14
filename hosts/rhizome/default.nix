@@ -17,7 +17,7 @@
   # This machine's choices (override the global defaults just by stating them)
   myDesktop.environment = "niri";
   myUsers = [ "greg" ];
-  myPodman.enable = true;          # rootless podman — needed by RustDesk (distrobox)
+  myRustdesk.enable = true;        # remote desktop — pulls in rootless podman + uinput
 
   # Laptop power management (integrates with DMS's power widget).
   services.power-profiles-daemon.enable = true;
