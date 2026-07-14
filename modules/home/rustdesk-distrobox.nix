@@ -41,16 +41,21 @@ let
       "$HOME/.config/distrobox/rustdesk-integrate.sh" "$HOME" >/dev/null 2>&1 || true
 
     # 3. Launch. Strip host nixpkgs GTK/gio/loader vars so Ubuntu uses its own,
-    #    and point RustDesk's session bus at the HOST bus (exposed under /run/host
-    #    with init=true) so it reaches the host xdg-desktop-portal — needed for
-    #    the ScreenCast/RemoteDesktop portal calls RustDesk makes on connect.
-    hostbus="unix:path=/run/host/run/user/$(id -u)/bus"
+    #    and point the whole session at the HOST runtime dir (exposed under
+    #    /run/host with init=true). This matters because RustDesk captures the
+    #    screen in a SEPARATE child process (src/server/wayland.rs); pointing
+    #    XDG_RUNTIME_DIR + the bus here means every RustDesk process — GUI,
+    #    service, and capture child — reaches the host xdg-desktop-portal AND
+    #    the host PipeWire socket. Setting only the GUI's bus left the capture
+    #    child on the container bus ("portal.Desktop not provided").
+    hostrun="/run/host/run/user/$(id -u)"
     exec distrobox enter rustdesk -- env \
       -u GIO_MODULE_DIR -u GIO_EXTRA_MODULES -u GDK_PIXBUF_MODULE_FILE \
       -u GDK_PIXBUF_MODULEDIR -u GTK_PATH -u GTK_EXE_PREFIX \
       -u GTK_IM_MODULE_FILE -u GSETTINGS_SCHEMA_DIR -u LD_LIBRARY_PATH \
       XDG_DATA_DIRS=/usr/local/share:/usr/share \
-      DBUS_SESSION_BUS_ADDRESS="$hostbus" \
+      XDG_RUNTIME_DIR="$hostrun" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=$hostrun/bus" \
       rustdesk "$@"
   '';
 in
