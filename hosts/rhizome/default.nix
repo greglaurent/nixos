@@ -17,7 +17,8 @@
   # This machine's choices (override the global defaults just by stating them)
   myDesktop.environment = "niri";
   myUsers = [ "greg" ];
-  myRustdesk.enable = true;        # remote desktop — pulls in rootless podman + uinput
+  myPodman.enable = true;          # rootless podman + docker compatibility
+  myRustdesk.enable = true;        # remote desktop (native) — provides uinput
 
   # Laptop power management (integrates with DMS's power widget).
   services.power-profiles-daemon.enable = true;

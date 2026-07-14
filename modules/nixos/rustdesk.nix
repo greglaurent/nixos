@@ -1,24 +1,23 @@
 # RustDesk (remote desktop) as a single opt-in feature: `myRustdesk.enable`.
-# RustDesk runs in a distrobox container (modules/home/rustdesk-distrobox.nix)
-# because the native builds crash on niri. That home-manager launcher can't turn
-# on the SYSTEM prerequisites itself, so this module bundles them behind one
-# switch:
-#   * rootless podman  — the container runtime (pulls in myPodman + subuid)
-#   * /dev/uinput      — RustDesk injects keyboard/mouse into the niri session
-# The home half activates automatically off `osConfig.myRustdesk.enable`, so you
-# can never end up with the launcher present but the runtime missing (which is
-# what silently broke rhizome). Screen capture uses the desktop portal already
-# provided by the niri desktop. Enable per host with `myRustdesk.enable = true;`.
+# RustDesk runs NATIVELY (nixpkgs rustdesk-flutter, see modules/home/rustdesk.nix)
+# — the same Flutter build that works on Arch. This module provides the one
+# SYSTEM-level prerequisite the home package can't set up itself:
+#   * /dev/uinput — RustDesk injects keyboard/mouse into the niri session for
+#     remote control (Wayland blocks synthetic input otherwise).
+# Screen capture uses the plain ScreenCast portal, already provided by the niri
+# desktop (xdg-desktop-portal-gnome). Enable per host with `myRustdesk.enable = true;`.
+#
+# (History: this used to pull in rootless podman for a distrobox container. That
+# routed capture to the RemoteDesktop portal, which niri lacks — niri #390 — so
+# it never worked. Native RustDesk uses ScreenCast, which niri supports.)
 { config, lib, ... }:
 let
   cfg = config.myRustdesk;
 in
 {
-  options.myRustdesk.enable = lib.mkEnableOption "RustDesk remote desktop (distrobox)";
+  options.myRustdesk.enable = lib.mkEnableOption "RustDesk remote desktop (native)";
 
   config = lib.mkIf cfg.enable {
-    myPodman.enable = true;          # container runtime + per-user subuid ranges
-
     # uinput: synthetic keyboard/mouse for remote *control* (Wayland blocks
     # injected input otherwise). Creates the `uinput` group + a udev rule
     # granting it 0660 on /dev/uinput; each configured user joins that group.
