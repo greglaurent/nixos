@@ -167,7 +167,7 @@ lib.mkIf (osConfig.myRustdesk.enable or false) {
     [rustdesk]
     image=ubuntu:22.04
     init=true
-    additional_packages=wget desktop-file-utils python3 python3-dbus software-properties-common
+    additional_packages=wget desktop-file-utils python3 python3-dbus software-properties-common gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-pipewire
     init_hooks=sh ${home}/.config/distrobox/rustdesk-build.sh ${home} || true
   '';
 }
