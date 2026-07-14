@@ -30,6 +30,7 @@
       zen-browser = zen-browser.packages.${system}.default;
       claude-desktop = claude-desktop.packages.${system}.claude-desktop-fhs;
       obsbot-camera-control = final.callPackage ./pkgs/obsbot-camera-control { };
+      rustdesk-bin = final.callPackage ./pkgs/rustdesk-bin { };   # official 1.4.9 binary, patched for NixOS
     };
 
     mkHost = host: nixpkgs.lib.nixosSystem {
