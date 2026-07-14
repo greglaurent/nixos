@@ -40,12 +40,17 @@ let
     distrobox enter rustdesk -- sudo sh \
       "$HOME/.config/distrobox/rustdesk-integrate.sh" "$HOME" >/dev/null 2>&1 || true
 
-    # 3. Launch, stripping host nixpkgs GTK/gio/loader vars so Ubuntu uses its own.
+    # 3. Launch. Strip host nixpkgs GTK/gio/loader vars so Ubuntu uses its own,
+    #    and point RustDesk's session bus at the HOST bus (exposed under /run/host
+    #    with init=true) so it reaches the host xdg-desktop-portal — needed for
+    #    the ScreenCast/RemoteDesktop portal calls RustDesk makes on connect.
+    hostbus="unix:path=/run/host/run/user/$(id -u)/bus"
     exec distrobox enter rustdesk -- env \
       -u GIO_MODULE_DIR -u GIO_EXTRA_MODULES -u GDK_PIXBUF_MODULE_FILE \
       -u GDK_PIXBUF_MODULEDIR -u GTK_PATH -u GTK_EXE_PREFIX \
       -u GTK_IM_MODULE_FILE -u GSETTINGS_SCHEMA_DIR -u LD_LIBRARY_PATH \
       XDG_DATA_DIRS=/usr/local/share:/usr/share \
+      DBUS_SESSION_BUS_ADDRESS="$hostbus" \
       rustdesk "$@"
   '';
 in
