@@ -269,6 +269,12 @@ window-rule {
 }
 debug {
     honor-xdg-activation-with-invalid-serial
+    // Force screencast buffers to the invalid (linear/SHM-compatible) modifier
+    // instead of DMA-BUF. RustDesk (and OBS on some GPUs) can't import niri's
+    // DMA-BUF screencast buffers -> PipeWire negotiation fails with "no more
+    // input formats", which RustDesk reports as "Wayland requires higher
+    // version". See niri #3145 and the RemoteDesktop-portal discussion.
+    force-pipewire-invalid-modifier
 }
 
 // Override to disable super+tab
