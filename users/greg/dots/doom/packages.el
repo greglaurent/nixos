@@ -56,6 +56,7 @@
 ;; typst-ts-mode is provided via Nix (extraPackages in home.nix) instead of the
 ;; codeberg straight recipe, which unstraightened's fetcher can choke on.
 ;; (package! typst-ts-mode :recipe (:host codeberg :repo "meow_king/typst-ts-mode"))
+(package! ron-mode)  ; major mode for Rusty Object Notation (.ron)
 (package! nov)
 (package! org-noter)
 (package! empv)   ; control mpv from Emacs (play URLs/local files/directories)

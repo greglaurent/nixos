@@ -45,7 +45,13 @@
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
-(setq display-line-numbers-type t)
+(setq display-line-numbers-type 'relative)
+
+;; .ron (Rusty Object Notation) otherwise opens in fundamental-mode, which
+;; Doom's line-number hook (prog/text/conf only) never touches. ron-mode derives
+;; from prog-mode, so it brings real RON highlighting AND the line numbers.
+(use-package! ron-mode
+  :mode "\\.ron\\'")
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `with-eval-after-load' block, otherwise Doom's defaults may override your
