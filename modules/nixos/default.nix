@@ -10,5 +10,6 @@
     ./podman.nix
     ./rustdesk.nix
     ./obsbot.nix
+    ./netperf.nix
   ];
 }

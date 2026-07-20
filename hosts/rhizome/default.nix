@@ -17,6 +17,7 @@
   # This machine's choices (override the global defaults just by stating them)
   myDesktop.environment = "niri";
   myUsers = [ "greg" ];
+  myGaming.enable = true;          # Steam + gamescope session + gamemode
   myPodman.enable = true;          # rootless podman + docker compatibility
   myRustdesk.enable = true;        # remote desktop (native) — provides uinput
 
