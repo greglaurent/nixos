@@ -27,6 +27,12 @@
     #   });
     pkgs.zoom-us
 
+    # ── Game streaming ── Moonlight is the client: it connects to a Sunshine
+    # (or GeForce Experience) host and plays its stream. Installed on both hosts
+    # so either can be the couch/laptop end; the box running the game still
+    # needs a Sunshine host to pair with.
+    pkgs.moonlight-qt
+
     # ── Notes / office / reading ──
     pkgs.obsidian
 

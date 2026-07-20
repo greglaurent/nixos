@@ -20,6 +20,7 @@
   myGaming.enable = true;          # Steam + gamescope session + gamemode
   myPodman.enable = true;          # rootless podman + docker compatibility
   myRustdesk.enable = true;        # remote desktop (native) — provides uinput
+  mySunshine.enable = true;        # game-streaming host (pairs with Moonlight)
 
   # Laptop power management (integrates with DMS's power widget).
   services.power-profiles-daemon.enable = true;

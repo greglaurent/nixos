@@ -11,5 +11,6 @@
     ./rustdesk.nix
     ./obsbot.nix
     ./netperf.nix
+    ./sunshine.nix
   ];
 }

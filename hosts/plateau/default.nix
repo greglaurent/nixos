@@ -24,5 +24,6 @@
   myGaming.enable = true;
   myPodman.enable = true;           # rootless podman + docker compatibility
   myRustdesk.enable = true;         # remote desktop (native) — provides uinput
+  mySunshine.enable = true;         # game-streaming host (pairs with Moonlight)
   myObsbot.enable = true;
 }
