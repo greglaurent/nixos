@@ -29,14 +29,17 @@ in
       autoStart = true;      # start the host service on login
     };
 
-    # uinput: Sunshine emits synthetic gamepad/keyboard/mouse from the remote
-    # client (Wayland blocks injected input otherwise). services.sunshine already
-    # sets hardware.uinput.enable (which creates the `uinput` group + a 0660 udev
-    # rule on /dev/uinput), but it does NOT join users to that group — so do that
-    # here, otherwise the user-level Sunshine service can't open /dev/uinput.
+    # Input device access for the user-level Sunshine service:
+    #   * uinput — services.sunshine sets hardware.uinput.enable (creating the
+    #     `uinput` group + a 0660 udev rule on /dev/uinput) but does NOT join
+    #     users to it; without membership Sunshine can't create virtual devices.
+    #   * input — Sunshine's own udev rules (services.udev.packages, shipped by
+    #     the module) grant /dev/uhid + controller access to the `input` group.
+    #     Sunshine's docs: "If controllers are not detected, ensure the user is
+    #     in the input group." Missing this causes flaky gamepad detection.
     users.users = builtins.listToAttrs (map (name: {
       inherit name;
-      value.extraGroups = [ "uinput" ];
+      value.extraGroups = [ "uinput" "input" ];
     }) config.myUsers);
   };
 }

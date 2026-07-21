@@ -16,6 +16,11 @@ in
 
     programs.gamemode.enable = true;    # feral gamemode: perf governor on launch
 
+    services.udev.extraRules = ''
+      # Ignore the DualShock touchpad-as-mouse interface so games don't see a second input device
+      SUBSYSTEM=="input", ATTRS{name}=="Sony Computer Entertainment Wireless Controller Touchpad", ENV{LIBINPUT_IGNORE_DEVICE}="1"
+    '';
+
     # programs.steam already sets hardware.graphics.enable32Bit on modern
     # nixpkgs, so the 32-bit GL/Vulkan driver support is handled for us.
   };
