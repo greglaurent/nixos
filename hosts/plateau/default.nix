@@ -11,6 +11,12 @@
   networking.hostName = "plateau";
   system.stateVersion = "26.05";
 
+  # Wake-on-LAN on the onboard NIC so Moonlight can wake plateau from sleep.
+  # enp74s0 = onboard PCIe NIC (MAC 9c:6b:00:58:c3:14). The USB ethernet
+  # dongle (enp8s0u2u4u5) is intentionally excluded — USB NICs can't reliably
+  # wake from S3/S5. Requires "Wake on LAN" enabled and ErP/EuP disabled in BIOS.
+  networking.interfaces.enp74s0.wakeOnLan.enable = true;
+
   # LUKS root. REPLACE both the mapper name and the UUID with the real values
   # from plateau (`sudo blkid` → the crypto_LUKS partition's UUID). The name
   # after "luks-" is conventionally that same UUID.
