@@ -29,14 +29,25 @@ in
       autoStart = true;      # start the host service on login
     };
 
-    # Input device access for the user-level Sunshine service:
+    # /dev/uhid: inputtino creates Sunshine's virtual gamepad (DS5) emulation
+    # through uhid, but neither the kernel nor the sunshine package ships a udev
+    # rule for it — it stays root-only, so the user service can't open it and
+    # Sunshine logs "Gamepad ds5 disabled due to Permission denied". Grant the
+    # `input` group rw so the user service can emit a streamed gamepad. uhid is a
+    # kernel-created *static* node (udev has no db entry — `udevadm info` reports
+    # "No such device"), so the rule needs OPTIONS+="static_node=uhid" to apply,
+    # same shape as the working uinput rule.
+    services.udev.extraRules = ''
+      SUBSYSTEM=="misc", KERNEL=="uhid", MODE="0660", GROUP="input", OPTIONS+="static_node=uhid"
+    '';
+
+    # Group membership for the user-level Sunshine service:
     #   * uinput — services.sunshine sets hardware.uinput.enable (creating the
     #     `uinput` group + a 0660 udev rule on /dev/uinput) but does NOT join
     #     users to it; without membership Sunshine can't create virtual devices.
-    #   * input — Sunshine's own udev rules (services.udev.packages, shipped by
-    #     the module) grant /dev/uhid + controller access to the `input` group.
+    #   * input — evdev controller access, plus rw on the uhid rule above.
     #     Sunshine's docs: "If controllers are not detected, ensure the user is
-    #     in the input group." Missing this causes flaky gamepad detection.
+    #     in the input group."
     users.users = builtins.listToAttrs (map (name: {
       inherit name;
       value.extraGroups = [ "uinput" "input" ];
