@@ -16,6 +16,7 @@
         # ── the toolchain for THIS project (isolated from your system) ──
         packages = with pkgs; [
           git
+          # cargo-deny       # supply-chain gating (deny.toml) — pin per-project for CI parity
           # nodejs_20
           # pnpm
           # python312

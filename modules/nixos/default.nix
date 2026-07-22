@@ -12,5 +12,6 @@
     ./obsbot.nix
     ./netperf.nix
     ./sunshine.nix
+    ./jdslabs.nix
   ];
 }

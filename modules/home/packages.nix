@@ -12,6 +12,7 @@
     # Rust
     rustup
     (lib.hiPrio rust-analyzer)   # real rust-analyzer instead of proxy shim
+    cargo-deny                   # dependency license/advisory/ban linting (deny.toml)
 
     # C/C++
     clang-tools
