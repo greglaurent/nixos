@@ -65,6 +65,25 @@
     enable = true;
     package = pkgs.ananicy-cpp;
     rulesProvider = pkgs.ananicy-rules-cachyos;
+    # Turn off ananicy-cpp's cgroup features, which are broken under systemd's
+    # cgroup-v2 and only spam `add_pid_to_cgroup: Invalid argument`:
+    #   cgroup_realtime_workaround — THE culprit (worker.cpp:209): for any rule
+    #     with an RT sched policy it moves the process to the *root* cgroup, a
+    #     cgroup-v1 RT-throttle workaround. cgroup-v2 forbids PIDs in the root, so
+    #     every RT process errors. Unnecessary on v2. Gating it off short-circuits
+    #     the failing call entirely.
+    #   cgroup_load / apply_cgroup — the .cgroups CPU-throttle path (cpu80/85/90);
+    #     off so nothing tries to create/populate those either.
+    # The valuable, working parts stay on: nice, ionice, sched, oom_score_adj, and
+    # cpuset (which uses sched_setaffinity, not cgroups). settings is attrsOf with
+    # mkOptionDefault defaults, so these override per-key.
+    settings = {
+      # mkForce: the module hard-sets this one to true (a plain definition, unlike
+      # the mkOptionDefault-set flags below), so an equal-priority override collides.
+      cgroup_realtime_workaround = lib.mkForce false;
+      cgroup_load = false;
+      apply_cgroup = false;
+    };
   };
 
   services.fwupd.enable = true;
