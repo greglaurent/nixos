@@ -33,11 +33,8 @@
   mySunshine.enable = true;         # game-streaming host (pairs with Moonlight)
   myObsbot.enable = true;
 
-  # sched-ext userspace scheduler (CachyOS-style scheduling on the stock kernel).
-  # Per-host: scx_lavd (latency-tuned) for now; a many-core desktop may prefer a
-  # throughput scheduler like scx_rusty later. Reversible — drop to revert to EEVDF.
-  services.scx = {
-    enable = true;
-    scheduler = "scx_lavd";
-  };
+  # CachyOS-style perf stack (zram, earlyoom, ananicy, scx). Defaults to scx_lavd;
+  # if this many-core desktop wants a throughput scheduler later, set
+  # `myPerformance.scheduler = "scx_rusty";` here.
+  myPerformance.enable = true;
 }

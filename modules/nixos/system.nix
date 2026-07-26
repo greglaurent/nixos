@@ -26,66 +26,6 @@
     efi.canTouchEfiVariables = true;
   };
 
-  # zram: compressed swap in RAM (zstd, ~2-3x). Swapping to compressed RAM is far
-  # cheaper than disk, so this lifts effective capacity and keeps the system
-  # responsive under memory pressure — the Arch/Fedora/CachyOS default. Baseline,
-  # not per-host like scx: unlike a scheduler this is hardware-agnostic and always
-  # a win. mkDefault so a future host can still override. Coexists with the disk
-  # swapDevices in each host's hardware-configuration.nix — zram's higher priority
-  # means the kernel fills zram first and only spills to the partition.
-  zramSwap = {
-    enable = lib.mkDefault true;
-    algorithm = "zstd";
-    memoryPercent = 50;          # zram device capped at 50% of RAM
-  };
-
-  # Sysctls tuned for the zram-as-primary-swap case (vs disk swap):
-  #   swappiness 180 — swapping to RAM is cheap, so lean into it (kernel max 200).
-  #   page-cluster 0 — disable swap read-ahead; zram random access is fast, so
-  #                    batching pages in just wastes decompression work.
-  boot.kernel.sysctl = {
-    "vm.swappiness" = lib.mkDefault 180;
-    "vm.page-cluster" = lib.mkDefault 0;
-  };
-
-  # Memory-pressure handler. The kernel OOM killer acts too late (system already
-  # thrashing); earlyoom kills a process while things are still responsive, using
-  # free-RAM/free-swap thresholds — which pair naturally with the zram swap above.
-  # We disable systemd-oomd (NixOS default-on) rather than run both: they use
-  # different signals (cgroup pressure vs whole-system free memory) and stacking
-  # them just means two daemons racing to kill. Pick one.
-  systemd.oomd.enable = false;
-  services.earlyoom.enable = true;
-
-  # ananicy-cpp: auto-applies nice / ionice / scheduling classes per process from
-  # a rule set, so background jobs yield to interactive ones — a core part of the
-  # CachyOS "feel". Complements scx (scx schedules; ananicy sets the priorities it
-  # schedules by). rulesProvider is CachyOS's own ruleset, packaged in nixpkgs.
-  services.ananicy = {
-    enable = true;
-    package = pkgs.ananicy-cpp;
-    rulesProvider = pkgs.ananicy-rules-cachyos;
-    # Turn off ananicy-cpp's cgroup features, which are broken under systemd's
-    # cgroup-v2 and only spam `add_pid_to_cgroup: Invalid argument`:
-    #   cgroup_realtime_workaround — THE culprit (worker.cpp:209): for any rule
-    #     with an RT sched policy it moves the process to the *root* cgroup, a
-    #     cgroup-v1 RT-throttle workaround. cgroup-v2 forbids PIDs in the root, so
-    #     every RT process errors. Unnecessary on v2. Gating it off short-circuits
-    #     the failing call entirely.
-    #   cgroup_load / apply_cgroup — the .cgroups CPU-throttle path (cpu80/85/90);
-    #     off so nothing tries to create/populate those either.
-    # The valuable, working parts stay on: nice, ionice, sched, oom_score_adj, and
-    # cpuset (which uses sched_setaffinity, not cgroups). settings is attrsOf with
-    # mkOptionDefault defaults, so these override per-key.
-    settings = {
-      # mkForce: the module hard-sets this one to true (a plain definition, unlike
-      # the mkOptionDefault-set flags below), so an equal-priority override collides.
-      cgroup_realtime_workaround = lib.mkForce false;
-      cgroup_load = false;
-      apply_cgroup = false;
-    };
-  };
-
   services.fwupd.enable = true;
   services.automatic-timezoned.enable = true;
 
@@ -122,7 +62,7 @@
     LC_PAPER = "en_US.UTF-8";
     LC_TELEPHONE = "en_US.UTF-8";
     LC_TIME = "en_US.UTF-8";
-  };  
+  };
 
   environment.systemPackages = with pkgs; [ zsh git neovim ];
   programs.git.enable = true;

@@ -7,6 +7,7 @@
     ./virtualisation.nix
     ./desktop
     ./gaming.nix
+    ./performance.nix
     ./podman.nix
     ./rustdesk.nix
     ./obsbot.nix
