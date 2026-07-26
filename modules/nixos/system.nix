@@ -26,6 +26,47 @@
     efi.canTouchEfiVariables = true;
   };
 
+  # zram: compressed swap in RAM (zstd, ~2-3x). Swapping to compressed RAM is far
+  # cheaper than disk, so this lifts effective capacity and keeps the system
+  # responsive under memory pressure — the Arch/Fedora/CachyOS default. Baseline,
+  # not per-host like scx: unlike a scheduler this is hardware-agnostic and always
+  # a win. mkDefault so a future host can still override. Coexists with the disk
+  # swapDevices in each host's hardware-configuration.nix — zram's higher priority
+  # means the kernel fills zram first and only spills to the partition.
+  zramSwap = {
+    enable = lib.mkDefault true;
+    algorithm = "zstd";
+    memoryPercent = 50;          # zram device capped at 50% of RAM
+  };
+
+  # Sysctls tuned for the zram-as-primary-swap case (vs disk swap):
+  #   swappiness 180 — swapping to RAM is cheap, so lean into it (kernel max 200).
+  #   page-cluster 0 — disable swap read-ahead; zram random access is fast, so
+  #                    batching pages in just wastes decompression work.
+  boot.kernel.sysctl = {
+    "vm.swappiness" = lib.mkDefault 180;
+    "vm.page-cluster" = lib.mkDefault 0;
+  };
+
+  # Memory-pressure handler. The kernel OOM killer acts too late (system already
+  # thrashing); earlyoom kills a process while things are still responsive, using
+  # free-RAM/free-swap thresholds — which pair naturally with the zram swap above.
+  # We disable systemd-oomd (NixOS default-on) rather than run both: they use
+  # different signals (cgroup pressure vs whole-system free memory) and stacking
+  # them just means two daemons racing to kill. Pick one.
+  systemd.oomd.enable = false;
+  services.earlyoom.enable = true;
+
+  # ananicy-cpp: auto-applies nice / ionice / scheduling classes per process from
+  # a rule set, so background jobs yield to interactive ones — a core part of the
+  # CachyOS "feel". Complements scx (scx schedules; ananicy sets the priorities it
+  # schedules by). rulesProvider is CachyOS's own ruleset, packaged in nixpkgs.
+  services.ananicy = {
+    enable = true;
+    package = pkgs.ananicy-cpp;
+    rulesProvider = pkgs.ananicy-rules-cachyos;
+  };
+
   services.fwupd.enable = true;
   services.automatic-timezoned.enable = true;
 

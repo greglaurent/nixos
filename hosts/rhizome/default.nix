@@ -25,6 +25,15 @@
   # Laptop power management (integrates with DMS's power widget).
   services.power-profiles-daemon.enable = true;
 
+  # sched-ext userspace scheduler (CachyOS-style scheduling on the stock kernel;
+  # linuxPackages_latest carries sched_ext, mainline since 6.12). Per-host on
+  # purpose — the right scheduler is hardware/workload-specific. scx_lavd is
+  # latency/laptop-tuned. Reversible: drop it to fall back to kernel EEVDF.
+  services.scx = {
+    enable = true;
+    scheduler = "scx_lavd";
+  };
+
   # Fingerprint reader — enrol with `fprintd-enroll`. Enabling this also wires
   # fingerprint auth into PAM (login/sudo/lock) by default.
   services.fprintd.enable = true;
