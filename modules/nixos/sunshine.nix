@@ -27,6 +27,17 @@ in
       openFirewall = true;   # 47984-48010 TCP/UDP (HTTPS control + RTSP/video/audio/control)
       capSysAdmin = true;    # needed for KMS/DRM capture of the Wayland session
       autoStart = true;      # start the host service on login
+
+      # Force Xbox One virtual-pad emulation. Sunshine's default `gamepad = auto`,
+      # together with the on-by-default motion_as_ds4/touchpad_as_ds4, makes it
+      # emulate a PlayStation (ds5) pad whenever the *client's* controller reports
+      # a gyro or touchpad — which Flydigi pads do even in Xbox mode. Steam on the
+      # host then sees a DualSense (which needs "PlayStation Configuration Support"
+      # enabled) instead of the Xbox pad actually in hand, so it looks like the
+      # controller "isn't picked up". Pinning xone gives Steam a plug-and-play Xbox
+      # controller. (settings is a freeform submodule, so this merges with the
+      # module's default port.)
+      settings.gamepad = "xone";
     };
 
     # /dev/uhid: inputtino creates Sunshine's virtual gamepad (DS5) emulation
