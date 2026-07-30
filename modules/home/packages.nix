@@ -42,11 +42,12 @@
     shellcheck
     bash-language-server
 
-    # Markup Formats 
+    # Markup Formats
     marksman
     yaml-language-server
     taplo
     sqls
+    epubcheck        # EPUB3 validation (XHTML/OPF/NCX conformance)
 
     # tree-sitter
     tree-sitter
