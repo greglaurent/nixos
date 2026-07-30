@@ -41,7 +41,23 @@
     pkgs.mpv
     pkgs.yt-dlp
     pkgs.obs-studio
-    pkgs.tidal-hifi
+    # tidal-hifi white-screens on Wayland: its Chromium sandbox zygote fails
+    # (zygote_host_impl_linux.cc "Invalid argument") and the GPU process can't
+    # launch. The maintainer's documented fix is the `--no-sandbox` flag
+    # (docs/known-issues.md); the app's own "disableSandbox" config toggle applies
+    # too late — from JS, after Electron has already init'd the sandbox — so it's
+    # unreliable (the docs say as much). Wrap the binary so the flag is always on
+    # the command line, covering terminal *and* .desktop (Exec=tidal-hifi,
+    # PATH-resolved) launches. Other Electron apps here (slack/discord/obsidian)
+    # don't need this — they use the userns sandbox fine; tidal-hifi is the outlier.
+    (pkgs.symlinkJoin {
+      name = "tidal-hifi-nosandbox";
+      paths = [ pkgs.tidal-hifi ];
+      nativeBuildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        wrapProgram $out/bin/tidal-hifi --add-flags "--no-sandbox"
+      '';
+    })
     pkgs.imagemagick
     pkgs.ffmpegthumbnailer
 
