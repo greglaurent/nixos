@@ -177,6 +177,10 @@ hotkey-overlay {
 }
 prefer-no-csd
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+// Wayscriber: ZoomIt-like on-screen annotation daemon (wlr-layer-shell overlay
+// + tray). niri equivalent of Hyprland's `exec-once = wayscriber --daemon`;
+// toggle the overlay with the Mod+D binds defined in binds.kdl.
+spawn-at-startup "wayscriber" "--daemon"
 animations {
     workspace-switch {
         spring damping-ratio=0.80 stiffness=523 epsilon=0.0001

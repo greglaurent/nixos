@@ -9,4 +9,16 @@ binds {
 
     // Add further custom/override window binds below, e.g.:
     // Mod+Shift+Space { switch-focus-between-floating-and-tiling; }
+
+    // ── Wayscriber (screen annotation) ── niri port of the tool's Hyprland
+    // example. Because this file is the LAST include, Mod+D here overrides
+    // DMS's toggle-overview; overview is still on Mod+Tab so nothing is lost.
+    // Light-passthrough's toggle went to Mod+Alt+K because the example's
+    // Mod+Alt+L is our Lock Screen. niri binds are press-only (no Hyprland
+    // `bindr`/on-release), so the hold-to-draw press/release pair can't be
+    // ported 1:1 — the Mod+Alt+D toggle covers that need instead.
+    Mod+D       hotkey-overlay-title="Wayscriber: toggle overlay"   { spawn "wayscriber" "--daemon-toggle"; }
+    Mod+Shift+D hotkey-overlay-title="Wayscriber: toggle (frozen)"  { spawn "wayscriber" "--daemon-toggle" "--freeze"; }
+    Mod+Alt+K   hotkey-overlay-title="Wayscriber: light passthrough" { spawn "wayscriber" "--light-toggle"; }
+    Mod+Alt+D   hotkey-overlay-title="Wayscriber: light draw toggle" { spawn "wayscriber" "--light-draw-toggle"; }
 }
