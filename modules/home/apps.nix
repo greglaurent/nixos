@@ -64,6 +64,7 @@
     # ── Other Utils ──
     # default: localsend
     pkgs.satty
+    pkgs.wayscriber  # ZoomIt-like on-screen annotation/zoom for Wayland (Rust)
     pkgs.mission-center
     pkgs.cloudflared
 
