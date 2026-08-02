@@ -19,14 +19,29 @@ let
   cfg = config.mySunshine;
 in
 {
-  options.mySunshine.enable = lib.mkEnableOption "Sunshine game-streaming host";
+  options.mySunshine = {
+    enable = lib.mkEnableOption "Sunshine game-streaming host";
+
+    autoStart = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Start the Sunshine host daemon at login. Leave this true on a desktop
+        that hibernates (a fully powered-off machine can't be drained by an idle
+        daemon). Set it false on a laptop that only s2idles: an idle host daemon
+        holds the DRM/GPU capture path open, blocking deep sleep and draining the
+        battery. With it false, Sunshine stays fully installed and configured —
+        start it on demand with `systemctl --user start sunshine` to host.
+      '';
+    };
+  };
 
   config = lib.mkIf cfg.enable {
     services.sunshine = {
       enable = true;
       openFirewall = true;   # 47984-48010 TCP/UDP (HTTPS control + RTSP/video/audio/control)
       capSysAdmin = true;    # needed for KMS/DRM capture of the Wayland session
-      autoStart = true;      # start the host service on login
+      autoStart = cfg.autoStart;   # per-host: off on the laptop (see option above)
 
       # Force Xbox One virtual-pad emulation. Sunshine's default `gamepad = auto`,
       # together with the on-by-default motion_as_ds4/touchpad_as_ds4, makes it

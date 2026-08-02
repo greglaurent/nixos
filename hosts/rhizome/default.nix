@@ -20,7 +20,14 @@
   myGaming.enable = true;          # Steam + gamescope session + gamemode
   myPodman.enable = true;          # rootless podman + docker compatibility
   myRustdesk.enable = true;        # remote desktop (native) — provides uinput
-  mySunshine.enable = true;        # game-streaming host (pairs with Moonlight)
+  # Sunshine installed but NOT auto-started on the laptop: an idle host daemon
+  # holds the DRM/GPU capture path open, blocking deep s2idle and draining the
+  # battery (rhizome has no hibernate, unlike plateau). It's the streaming client
+  # (Moonlight); start the host on demand with `systemctl --user start sunshine`.
+  mySunshine = {
+    enable = true;
+    autoStart = false;
+  };
 
   # Laptop power management (integrates with DMS's power widget).
   services.power-profiles-daemon.enable = true;
