@@ -26,7 +26,10 @@
 , zlib
 , libva
 , gst_all_1
-, xorg
+, libx11
+, libxfixes
+, libxtst
+, libxcb
 }:
 let
   # GStreamer plugins RustDesk's Wayland capture pipeline needs at runtime:
@@ -54,7 +57,7 @@ stdenv.mkDerivation (finalAttrs: {
     glib gtk3 gdk-pixbuf librsvg pango cairo at-spi2-atk
     wayland libxkbcommon libpulseaudio pipewire dbus pam zlib libva
     gst_all_1.gstreamer gst_all_1.gst-plugins-base
-    xorg.libX11 xorg.libXfixes xorg.libXtst xorg.libxcb
+    libx11 libxfixes libxtst libxcb
   ];
 
   # Bundled Flutter plugin .so's live beside the binary; let the loader find them.

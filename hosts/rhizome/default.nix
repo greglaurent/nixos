@@ -55,7 +55,7 @@
   # (zram carries runtime swap); do not shrink it below RAM size.
   # GATE: test `systemctl hibernate` by hand and confirm a clean resume before
   # trusting the lid — Framework 13 AMD hibernate can be quirky.
-  services.logind.lidSwitch = "suspend-then-hibernate";
+  services.logind.settings.Login.HandleLidSwitch = "suspend-then-hibernate";
   systemd.sleep.settings.Sleep.HibernateDelaySec = "30min";
 
   # CachyOS-style perf stack (zram, earlyoom, ananicy, scx). scheduler defaults to

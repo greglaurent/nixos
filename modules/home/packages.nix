@@ -51,5 +51,8 @@
 
     # tree-sitter
     tree-sitter
+
+    # Wayland diagnostics (wayland-info: list compositor globals/protocols)
+    wayland-utils
   ];
 }

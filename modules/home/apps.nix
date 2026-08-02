@@ -33,6 +33,14 @@
     # needs a Sunshine host to pair with.
     pkgs.moonlight-qt
 
+    # ── Remote desktop (interim: wayvnc bound to localhost + SSH tunnel; a mesh
+    # VPN replaces the tunnel later). wayvnc = server (captures the niri session
+    # via zwlr_screencopy, injects input via virtual kbd/pointer — both confirmed
+    # present on niri). wlvncc = Wayland-native client. wayvnc listens on localhost
+    # only by default, so it's never network-exposed — SSH provides auth+crypto.
+    pkgs.wayvnc
+    pkgs.wlvncc
+
     # ── Notes / office / reading ──
     pkgs.obsidian
 
