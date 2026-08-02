@@ -12,4 +12,9 @@
   # device but can't connect.
   extraGroups = [ "networkmanager" "wheel" "video" "audio" "libvirtd" "scanner" "lp" "dialout" ];
   shell = pkgs.zsh;
+
+  # SSH login keys (sshd is enabled + hardened to key-only in modules/nixos/system.nix).
+  openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILCKYK7X2lRe3AhbpmtzeRGIrwOrd2a7OQ9psxC1mzGa gregory.m.laurent@gmail.com"
+  ];
 }

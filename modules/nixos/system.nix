@@ -26,6 +26,18 @@
     efi.canTouchEfiVariables = true;
   };
 
+  # SSH server, key-only + hardened. Lets you reach these machines directly —
+  # today over the LAN (the wayvnc-over-SSH-tunnel remote-desktop path), later
+  # bound to the tailnet. Authorized keys live in each user's account.nix.
+  services.openssh = {
+    enable = true;
+    settings = {
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      PermitRootLogin = "no";
+    };
+  };
+
   services.fwupd.enable = true;
   services.automatic-timezoned.enable = true;
 
