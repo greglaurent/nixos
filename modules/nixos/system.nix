@@ -79,6 +79,21 @@
   programs.git.enable = true;
   programs.zsh.enable = true;
 
+  # Python venv support. python3 (CPython) is installed in home packages and
+  # `python3 -m venv` works from stdlib — but pip-installed *binary wheels*
+  # (numpy, pandas, …) fail to load on NixOS with "cannot open shared object
+  # file" because they expect a standard FHS dynamic loader. nix-ld provides that
+  # shim; the libraries below cover the common wheel dependencies (libstdc++/
+  # libgcc via cc.lib, and zlib). Add more to `libraries` if a specific wheel
+  # needs another .so.
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      stdenv.cc.cc.lib
+      zlib
+    ];
+  };
+
   environment.sessionVariables = {
     EDITOR = "nvim";   # system-wide baseline (root, sudoedit, any user, GUI fallback)
     # BROWSER lives in the desktop layer (modules/nixos/desktop) — firefox only
