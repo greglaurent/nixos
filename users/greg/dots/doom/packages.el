@@ -61,5 +61,23 @@
 (package! org-noter)
 (package! empv)   ; control mpv from Emacs (play URLs/local files/directories)
 
+;; Org appearance. org-modern is minad's (same lineage as the vertico/corfu
+;; stack here). org-appear re-reveals emphasis markers on demand; org-super-agenda
+;; groups the agenda into sections. org-modern-indent is NOT on MELPA, so it needs
+;; an explicit git recipe AND a :pin — unstraightened fetches deterministically,
+;; so every non-overlay package must name a commit (MELPA ones are auto-pinned by
+;; the emacs-overlay snapshot; this git one is not).
+(package! org-modern)
+(package! org-appear)
+(package! org-super-agenda)
+(package! org-modern-indent
+  :recipe (:host github :repo "jdtsmith/org-modern-indent")
+  :pin "86bd83ee1ad95f123810eb3b116beb543db1960a")
+
+;; Org export backends. ox-pandoc needs the `pandoc' binary, ox-typst the `typst'
+;; binary (both in modules/home/packages.nix). On MELPA, so auto-pinned.
+(package! ox-pandoc)
+(package! ox-typst)
+
 (provide 'packages)
 ;;; packages.el ends here

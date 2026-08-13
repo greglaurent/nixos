@@ -58,6 +58,20 @@
   services.logind.settings.Login.HandleLidSwitch = "suspend-then-hibernate";
   systemd.sleep.settings.Sleep.HibernateDelaySec = "30min";
 
+  # The Framework 13 AMD i2c-hid touchpad (PIXA3854) comes back from hibernate
+  # half-initialized: a multitouch contact slot is left stuck, so libinput's
+  # finger count is offset by one (one finger acts as two, etc.), and pointer
+  # latency is degraded. Hibernate restores a RAM image and never re-enumerates
+  # the device, so nothing clears that state. Unbind+rebind the i2c-hid device on
+  # resume to force a clean driver probe, which resets the MT slots. resumeCommands
+  # runs on sleep.target teardown, so it fires after plain suspend AND hibernate.
+  powerManagement.resumeCommands = ''
+    d=i2c-PIXA3854:00
+    echo -n "$d" > /sys/bus/i2c/drivers/i2c_hid_acpi/unbind || true
+    sleep 0.3
+    echo -n "$d" > /sys/bus/i2c/drivers/i2c_hid_acpi/bind
+  '';
+
   # CachyOS-style perf stack (zram, earlyoom, ananicy, scx). scheduler defaults to
   # scx_lavd (latency/laptop-tuned) — right for the Framework.
   myPerformance.enable = true;

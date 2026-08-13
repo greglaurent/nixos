@@ -48,6 +48,7 @@
     taplo
     sqls
     epubcheck        # EPUB3 validation (XHTML/OPF/NCX conformance)
+    pandoc           # Org export via ox-pandoc (docx/epub/… ); the backend is inert without it
 
     # tree-sitter
     tree-sitter

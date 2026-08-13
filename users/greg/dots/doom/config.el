@@ -34,7 +34,7 @@
 ;; Pin fonts explicitly. Without this, Emacs scans the entire (14k+) installed
 ;; font set on the first frame -- that was most of the slow first launch.
 ;; Families verified present via fc-list.
-(setq doom-font (font-spec :family "Fira Code" :size 14)
+(setq doom-font (font-spec :family "JetBrains Mono" :size 14)
       doom-variable-pitch-font (font-spec :family "Fira Sans" :size 14))
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
@@ -160,6 +160,65 @@
 (use-package! org-noter
   :config
   (setq org-noter-notes-search-path (list (expand-file-name "noter" org-directory))))
+
+;; ── Org appearance ───────────────────────────────────────────────────────────
+;; org-modern (minad — same lineage as the vertico/corfu stack here): pill-styled
+;; TODO keywords/tags, modern bullets, tables, timestamps and #+begin/end blocks.
+;; Supersedes the older org-bullets/org-superstar/org-fancy-priorities trio.
+;; `global-org-modern-mode' styles BOTH org buffers and the agenda.
+(after! org
+  (setq org-hide-emphasis-markers t  ; org-appear re-reveals these on demand
+        org-pretty-entities t        ; \alpha &c. render as their glyphs
+        org-startup-indented t       ; org-indent on — org-modern-indent needs it
+        org-modern-star 'replace)
+  (global-org-modern-mode))
+
+;; org-modern-indent: correct block styling under org-indent. Added at hook depth
+;; 90 so it runs AFTER org-indent has set up its own indentation.
+(use-package! org-modern-indent
+  :after org
+  :config
+  (add-hook 'org-mode-hook #'org-modern-indent-mode 90))
+
+;; org-appear: hidden emphasis markers keep prose clean, but the *, /, ~, = markup
+;; (and links) reveal themselves when the cursor enters the word, staying editable.
+(use-package! org-appear
+  :hook (org-mode . org-appear-mode)
+  :config
+  (setq org-appear-autoemphasis t
+        org-appear-autolinks t
+        org-appear-autosubmarkers t))
+
+;; org-super-agenda: group the agenda into labeled sections instead of one flat
+;; list. Minimal starter grouping — tune `org-super-agenda-groups' to taste.
+(use-package! org-super-agenda
+  :after org-agenda
+  :config
+  (setq org-super-agenda-groups
+        '((:name "Today"     :time-grid t :scheduled today)
+          (:name "Overdue"   :deadline past)
+          (:name "Due soon"  :deadline future)
+          (:name "Important" :priority "A")))
+  (org-super-agenda-mode))
+
+;; Font ligatures in org-mode. Doom's :ui ligatures registers its 134-ligature
+;; set ONLY for `prog-mode' (see +ligatures-alist); org-mode derives from
+;; text-mode, so `global-ligature-mode' turns ligature-mode ON in org buffers but
+;; nothing is registered for them and no ligature ever composes. Register the
+;; prog-mode set for org-mode too. (Verified: this flips org-mode from no entry
+;; in `ligature-composition-table' to a full one.)
+(after! ligature
+  (ligature-set-ligatures 'org-mode (alist-get 'prog-mode +ligatures-alist)))
+
+;; ── Org export backends ──────────────────────────────────────────────────────
+;; ox-pandoc  → export Org through pandoc (docx/epub/…); needs the `pandoc'
+;;              binary (packages.nix).
+;; ox-typst   → export Org to Typst markup / PDF; uses the `typst' binary
+;;              (packages.nix).
+;; Each registers its backend in the `SPC m e' / `C-c C-e' export dispatch on
+;; load; `:after org' loads them when the first org buffer opens.
+(use-package! ox-pandoc :after org)
+(use-package! ox-typst  :after org)
 
 ;; +corfu +cape
 ;; Auto-complete on the FIRST char. Doom sets prefix=2 inside `corfu-auto', so
