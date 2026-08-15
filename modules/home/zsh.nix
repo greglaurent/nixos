@@ -16,10 +16,14 @@
       share = true;
     };
 
-    shellAliases = {
+    shellAliases = let
       # Path from myFlakeRoot (single source of truth), host from $(hostname) at
       # runtime — so the same alias rebuilds the right config on any machine.
       nix-rbs = "sudo nixos-rebuild switch --flake ${config.myFlakeRoot}#$(hostname)";
+    in {
+      inherit nix-rbs;
+      # Same rebuild, plus --upgrade (bumps the `nixos` channel if one is set).
+      nix-rbs-upgrade = "${nix-rbs} --upgrade";
       vim = "neovim";
       ec = "emacsclient -c -a ''";
       et = "emacsclient -t -a ''";
