@@ -24,6 +24,11 @@
       inherit nix-rbs;
       # Same rebuild, plus --upgrade (bumps the `nixos` channel if one is set).
       nix-rbs-upgrade = "${nix-rbs} --upgrade";
+      # Actually update packages: refresh the flake.lock pins (nixpkgs & friends)
+      # at the flake root, then rebuild onto them. This is the real "upgrade" for
+      # a flake config — --upgrade above only touches channels. --flake targets the
+      # root regardless of cwd; the lock write is unprivileged (only the switch sudos).
+      nix-rbs-update = "nix flake update --flake ${config.myFlakeRoot} && ${nix-rbs}";
       vim = "neovim";
       ec = "emacsclient -c -a ''";
       et = "emacsclient -t -a ''";
