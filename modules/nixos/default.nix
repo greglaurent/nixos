@@ -14,5 +14,6 @@
     ./netperf.nix
     ./sunshine.nix
     ./jdslabs.nix
+    ./ssh-stay-awake.nix
   ];
 }
