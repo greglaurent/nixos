@@ -300,3 +300,5 @@ include "dms/outputs.kdl"
 include "dms/cursor.kdl"
 // Custom/override binds — included LAST so they win over DMS for shared keys.
 include "binds.kdl"
+// Output overrides — likewise after dms/outputs.kdl so they win over DMS.
+include "outputs.kdl"

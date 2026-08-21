@@ -14,9 +14,34 @@
 # First run is interactive: open https://localhost:47990 on the HOST to set the
 # admin user/PIN, then pair Moonlight to it. That pairing state is per-machine
 # and lives outside the Nix store.
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 let
   cfg = config.mySunshine;
+
+  # Per-session resolution matching (see mySunshine.captureOutput).
+  #
+  # Sunshine execs prep commands DIRECTLY — boost::process with no shell (see
+  # run_command in src/platform/linux/misc.cpp) — so `&&` chains and shell
+  # syntax are not available and multi-step work has to live in a script.
+  #
+  # Sunshine expands its own $(VAR) syntax (NOT shell ${VAR}) before exec, so
+  # the client's numbers arrive here as ordinary argv.
+  niriPrep = pkgs.writeShellScript "sunshine-niri-prep" ''
+    out="$1"; w="$2"; h="$3"; fps="$4"
+    niri=${pkgs.niri}/bin/niri
+    # Order matters: the output has to exist before a mode can land on it.
+    "$niri" msg output "$out" on
+    # Scale 1 so the client receives 1:1 pixels and Moonlight is not scaling an
+    # already-scaled desktop.
+    "$niri" msg output "$out" scale 1
+    # custom-mode, not mode: the client's resolution is whatever its Moonlight
+    # asks for and will generally not be in the dongle's EDID mode list.
+    "$niri" msg output "$out" custom-mode "''${w}x''${h}@''${fps}"
+  '';
+
+  niriUndo = pkgs.writeShellScript "sunshine-niri-undo" ''
+    ${pkgs.niri}/bin/niri msg output "$1" off
+  '';
 in
 {
   options.mySunshine = {
@@ -32,6 +57,29 @@ in
         holds the DRM/GPU capture path open, blocking deep sleep and draining the
         battery. With it false, Sunshine stays fully installed and configured —
         start it on demand with `systemctl --user start sunshine` to host.
+      '';
+    };
+
+    captureOutput = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "HDMI-A-1";
+      description = ''
+        niri output to stream, as named by `niri msg outputs` (e.g. "HDMI-A-1").
+
+        Setting this points Sunshine's capture at that one output AND installs a
+        global prep-cmd that, per session, turns it on, forces scale 1, and sets
+        a custom mode matching the resolution/fps the connecting client asked
+        for — then turns it back off when the stream ends. The intended target
+        is a 4K EDID dongle rather than a real monitor: every client gets its own
+        native resolution and the desktop display is never touched.
+
+        Sunshine's docs claim output_name is a numeric index, but the Wayland
+        capture path matches the connector name first and only falls back to the
+        index (src/platform/linux/wlgrab.cpp) — the name is used here because it
+        is stable across hotplug.
+
+        Leave null to stream the primary output with no mode juggling.
       '';
     };
   };
@@ -52,7 +100,22 @@ in
       # controller "isn't picked up". Pinning xone gives Steam a plug-and-play Xbox
       # controller. (settings is a freeform submodule, so this merges with the
       # module's default port.)
-      settings.gamepad = "xone";
+      settings = {
+        gamepad = "xone";
+      } // lib.optionalAttrs (cfg.captureOutput != null) {
+        output_name = cfg.captureOutput;
+        # global_prep_cmd is a JSON array in sunshine.conf; the settings format
+        # writes values verbatim, so hand it real JSON. Global rather than
+        # per-app deliberately: it keeps `applications` undeclared, which leaves
+        # the app list editable in the web UI (declaring it would repoint
+        # file_apps at the store and drop everything configured there).
+        global_prep_cmd = builtins.toJSON [
+          {
+            do = "${niriPrep} ${cfg.captureOutput} $(SUNSHINE_CLIENT_WIDTH) $(SUNSHINE_CLIENT_HEIGHT) $(SUNSHINE_CLIENT_FPS)";
+            undo = "${niriUndo} ${cfg.captureOutput}";
+          }
+        ];
+      };
     };
 
     # /dev/uhid: inputtino creates Sunshine's virtual gamepad (DS5) emulation

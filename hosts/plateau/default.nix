@@ -31,6 +31,11 @@
   myPodman.enable = true;           # rootless podman + docker compatibility
   myRustdesk.enable = true;         # remote desktop (native) — provides uinput
   mySunshine.enable = true;         # game-streaming host (pairs with Moonlight)
+  # Stream the 4K EDID dongle on HDMI-A-1 rather than the HP U32 on DP-3: each
+  # session gets the connecting client's own resolution and the desktop monitor
+  # is never retimed. The dongle is off by default (dots/niri/outputs.kdl) and
+  # brought up by Sunshine's prep-cmd for the duration of the stream.
+  mySunshine.captureOutput = "HDMI-A-1";
   myObsbot.enable = true;
 
   # CachyOS-style perf stack (zram, earlyoom, ananicy, scx). Defaults to scx_lavd;
