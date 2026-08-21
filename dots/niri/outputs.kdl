@@ -1,35 +1,11 @@
-// Window placement for streaming. The capture output's own config lives in
-// stream-output.kdl, which Sunshine rewrites per session.
+// Intentionally empty of rules.
 //
-// Was: Included AFTER dms/outputs.kdl in config.kdl so these win
-// over DMS's auto-generated blocks — the same last-wins ordering binds.kdl uses.
+// The streaming capture output and its window-placement rule are BOTH written
+// per-session by Sunshine's prep-cmd into stream-output.kdl, which is included
+// ahead of this file. They have to be dynamic: niri window-rule matchers cannot
+// scope to an output, so a static fullscreen rule would apply even when nothing
+// is streaming, and a static output block would be shadowed anyway (output
+// blocks are first-match-wins).
 //
-// HDMI-A-1 (plateau) is a 4K EDID dongle, not a display: Sunshine captures it
-// so every Moonlight client streams at its own resolution without retiming the
-// desktop monitor. Off by default so it isn't a phantom workspace windows can
-// wander onto; mySunshine.captureOutput's prep-cmd turns it on, sets the
-// client's mode, and turns it back off when the stream ends.
-//
-// Inert on hosts that have no such output (rhizome), so this stays host-neutral.
-
-// Window placement during a stream. focus-monitor in Sunshine's prep-cmd is
-// only advisory: Steam maps its windows whenever it feels like it and restores
-// them to their last-used monitor, so games landed on DP-3 at random.
-//
-// This is deterministic instead. open-on-output resolves against niri's set of
-// MAPPED outputs (global_space.outputs() in handlers/xdg_shell.rs), and a
-// disabled output is not in that set — so while HDMI-A-1 is off, which is its
-// normal state, the lookup fails and placement falls through to the focused
-// monitor exactly as before. The rule only bites while Sunshine has the dongle
-// up, which is precisely when every new window belongs on it.
-//
-// Scoped to Steam deliberately, NOT a catch-all. niri consults open-on-output
-// BEFORE a window's own fullscreen output request (handlers/xdg_shell.rs), so a
-// catch-all intercepts games that open by asking to be fullscreen on a given
-// output — they came up windowed. Steam has no such preference at open, so
-// pinning it here is safe, and games inherit the dongle from focus-monitor in
-// Sunshine's prep-cmd while keeping their fullscreen path intact.
-window-rule {
-    match app-id="steam"
-    open-on-output "HDMI-A-1"
-}
+// Kept as a placeholder so the include in config.kdl stays valid and there is an
+// obvious place for future host-neutral output overrides.

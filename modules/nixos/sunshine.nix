@@ -49,11 +49,26 @@ let
     esac
 
     cfg="''${XDG_CONFIG_HOME:-$HOME/.config}/niri/stream-output.kdl"
+    # Both the output AND the placement rule are written here, because niri's
+    # window-rule matchers (app-id, title, is-floating, at-startup, ...) have no
+    # way to say "only on this output" — so a static rule forcing fullscreen
+    # would force it all the time. Writing the rule per-session scopes it: it
+    # exists while streaming and is gone the moment the stream ends.
+    #
+    # No match block, so it covers games too; their app-ids are arbitrary and
+    # enumerating them is a losing game.
     cat > "$cfg" <<EOF
     // Written by sunshine-niri-prep at stream start. Do not edit.
     output "$out" {
         mode custom=true "''${w}x''${h}@''${fps}"
         scale 1
+    }
+
+    window-rule {
+        open-on-output "$out"
+        open-floating false
+        open-fullscreen true
+        open-focused true
     }
     EOF
 
