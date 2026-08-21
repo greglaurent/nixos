@@ -23,8 +23,13 @@ output "HDMI-A-1" {
 // monitor exactly as before. The rule only bites while Sunshine has the dongle
 // up, which is precisely when every new window belongs on it.
 //
-// No match block: this applies to all windows, because games have arbitrary
-// app-ids and enumerating them is a losing game.
+// Scoped to Steam deliberately, NOT a catch-all. niri consults open-on-output
+// BEFORE a window's own fullscreen output request (handlers/xdg_shell.rs), so a
+// catch-all intercepts games that open by asking to be fullscreen on a given
+// output — they came up windowed. Steam has no such preference at open, so
+// pinning it here is safe, and games inherit the dongle from focus-monitor in
+// Sunshine's prep-cmd while keeping their fullscreen path intact.
 window-rule {
+    match app-id="steam"
     open-on-output "HDMI-A-1"
 }
