@@ -40,10 +40,12 @@ let
 
     # Validate BEFORE touching the output: a prep-cmd that fails part-way leaves
     # the display on, because Sunshine skips the undo when the launch aborts.
-    if [ -z "$w" ] || [ -z "$h" ] || [ -z "$fps" ]; then
-      echo "sunshine-niri-prep: no client geometry in environment" >&2
-      exit 1
-    fi
+    case "$w$h$fps" in
+      "" | *[!0-9]*)
+        echo "sunshine-niri-prep: bad client geometry in environment: '$w' '$h' '$fps'" >&2
+        exit 1
+        ;;
+    esac
 
     niri=${pkgs.niri}/bin/niri
     # Order matters: the output has to exist before a mode can land on it.
@@ -54,12 +56,33 @@ let
     # custom-mode, not mode: the client's resolution is whatever its Moonlight
     # asks for and will generally not be in the dongle's EDID mode list.
     "$niri" msg output "$out" custom-mode "''${w}x''${h}@''${fps}"
-    # Enabling an output does not move focus, and niri opens new windows on the
-    # FOCUSED output — without this, Steam and the game it launches land on the
-    # desktop monitor while the stream shows an empty dongle. Focus follows the
-    # capture target for the duration of the session; niri hands focus back on
-    # its own when the undo turns the output off.
-    "$niri" msg action focus-monitor "$out"
+
+    # Do NOT assume the above took effect. `niri msg` returns before the modeset
+    # lands, and if the output never comes up at all there is no error anywhere:
+    # open-on-output silently falls back to the focused monitor and niri parks
+    # the window on a fresh workspace there. That silent fallback is how Steam
+    # ended up on a second workspace on the desktop monitor.
+    #
+    # Poll until the output is actually mapped (logical != null) at the mode we
+    # asked for, then let the launch proceed. Failing loudly here is the point:
+    # a non-zero prep exit aborts the launch and Sunshine logs the reason.
+    for _ in $(${pkgs.coreutils}/bin/seq 60); do
+      if "$niri" msg --json outputs | ${pkgs.jq}/bin/jq -e \
+        --arg o "$out" --argjson w "$w" --argjson h "$h" '
+          .[$o] as $m
+          | $m.logical != null
+            and $m.current_mode != null
+            and $m.modes[$m.current_mode].width == $w
+            and $m.modes[$m.current_mode].height == $h
+        ' >/dev/null 2>&1; then
+        exit 0
+      fi
+      ${pkgs.coreutils}/bin/sleep 0.05
+    done
+
+    echo "sunshine-niri-prep: $out never came up at ''${w}x''${h} - refusing to launch" >&2
+    "$niri" msg --json outputs >&2 || true
+    exit 1
   '';
 
   niriUndo = pkgs.writeShellScript "sunshine-niri-undo" ''
