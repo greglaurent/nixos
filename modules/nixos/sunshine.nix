@@ -24,10 +24,27 @@ let
   # run_command in src/platform/linux/misc.cpp) — so `&&` chains and shell
   # syntax are not available and multi-step work has to live in a script.
   #
-  # Sunshine expands its own $(VAR) syntax (NOT shell ${VAR}) before exec, so
-  # the client's numbers arrive here as ordinary argv.
+  # The client's geometry is read from the ENVIRONMENT, not passed as argv.
+  # Sunshine's own $(VAR) syntax is expanded in proc::parse() when apps.json and
+  # the config are loaded, which happens long before any client connects — the
+  # SUNSHINE_CLIENT_* vars do not exist yet at that point and expand to empty
+  # strings. They are injected into the launched child's environment at session
+  # start instead (process.cpp, proc_t::execute), so the script picks them up
+  # here. (Sunshine's Windows examples use %VAR%, expanded by cmd.exe at
+  # runtime, which is why they don't hit this.)
   niriPrep = pkgs.writeShellScript "sunshine-niri-prep" ''
-    out="$1"; w="$2"; h="$3"; fps="$4"
+    out="$1"
+    w="''${SUNSHINE_CLIENT_WIDTH:-}"
+    h="''${SUNSHINE_CLIENT_HEIGHT:-}"
+    fps="''${SUNSHINE_CLIENT_FPS:-}"
+
+    # Validate BEFORE touching the output: a prep-cmd that fails part-way leaves
+    # the display on, because Sunshine skips the undo when the launch aborts.
+    if [ -z "$w" ] || [ -z "$h" ] || [ -z "$fps" ]; then
+      echo "sunshine-niri-prep: no client geometry in environment" >&2
+      exit 1
+    fi
+
     niri=${pkgs.niri}/bin/niri
     # Order matters: the output has to exist before a mode can land on it.
     "$niri" msg output "$out" on
@@ -111,7 +128,7 @@ in
         # file_apps at the store and drop everything configured there).
         global_prep_cmd = builtins.toJSON [
           {
-            do = "${niriPrep} ${cfg.captureOutput} $(SUNSHINE_CLIENT_WIDTH) $(SUNSHINE_CLIENT_HEIGHT) $(SUNSHINE_CLIENT_FPS)";
+            do = "${niriPrep} ${cfg.captureOutput}";
             undo = "${niriUndo} ${cfg.captureOutput}";
           }
         ];
