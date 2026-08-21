@@ -54,6 +54,12 @@ let
     # custom-mode, not mode: the client's resolution is whatever its Moonlight
     # asks for and will generally not be in the dongle's EDID mode list.
     "$niri" msg output "$out" custom-mode "''${w}x''${h}@''${fps}"
+    # Enabling an output does not move focus, and niri opens new windows on the
+    # FOCUSED output — without this, Steam and the game it launches land on the
+    # desktop monitor while the stream shows an empty dongle. Focus follows the
+    # capture target for the duration of the session; niri hands focus back on
+    # its own when the undo turns the output off.
+    "$niri" msg action focus-monitor "$out"
   '';
 
   niriUndo = pkgs.writeShellScript "sunshine-niri-undo" ''
