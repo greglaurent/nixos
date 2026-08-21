@@ -96,6 +96,18 @@
         # writable, and seed only-if-missing (never clobber DMS's live versions).
         # The live copies diverge and are never tracked back; hence seed/, not
         # dots/ (immutable) or content/ (authored + tracked).
+        # Sunshine rewrites this at every stream start/stop, so it must be a
+        # writable copy, not a store symlink. Same seed-once rule as dms/*.kdl.
+        home.activation.seedNiriStreamOutput =
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            dest="$HOME/.config/niri/stream-output.kdl"
+            if [ ! -e "$dest" ]; then
+              run mkdir -p "$HOME/.config/niri"
+              run cp ${../../../seed/niri/stream-output.kdl} "$dest"
+              run chmod u+w "$dest"
+            fi
+          '';
+
         home.activation.seedNiriDmsIncludes =
           lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             run mkdir -p "$HOME/.config/niri/dms"

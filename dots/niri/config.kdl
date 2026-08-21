@@ -291,6 +291,11 @@ recent-windows {
     }
 }
 
+// Sunshine's per-stream output state, rewritten by its prep-cmd. FIRST of the
+// output includes: output blocks are first-match-wins, so this must precede
+// both outputs.kdl and dms/outputs.kdl to govern the capture output.
+include "stream-output.kdl"
+
 // Output config — included BEFORE dms/*.kdl deliberately. Output blocks are
 // FIRST-match-wins, not last (Outputs::find in niri-config/src/output.rs, used
 // by the tty backend and by transient `niri msg output` changes), so this has

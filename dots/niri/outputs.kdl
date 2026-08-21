@@ -1,4 +1,7 @@
-// Output overrides. Included AFTER dms/outputs.kdl in config.kdl so these win
+// Window placement for streaming. The capture output's own config lives in
+// stream-output.kdl, which Sunshine rewrites per session.
+//
+// Was: Included AFTER dms/outputs.kdl in config.kdl so these win
 // over DMS's auto-generated blocks — the same last-wins ordering binds.kdl uses.
 //
 // HDMI-A-1 (plateau) is a 4K EDID dongle, not a display: Sunshine captures it
@@ -8,9 +11,6 @@
 // client's mode, and turns it back off when the stream ends.
 //
 // Inert on hosts that have no such output (rhizome), so this stays host-neutral.
-output "HDMI-A-1" {
-    off
-}
 
 // Window placement during a stream. focus-monitor in Sunshine's prep-cmd is
 // only advisory: Steam maps its windows whenever it feels like it and restores

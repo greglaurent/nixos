@@ -1,0 +1,13 @@
+// Owned by Sunshine's prep-cmd (mySunshine.captureOutput) — REWRITTEN at every
+// stream start and stop. Seeded here so the include always resolves; the live
+// copy is writable and diverges, so this is seed/ rather than dots/.
+//
+// Why a file and not `niri msg output`: those are TRANSIENT changes, and niri
+// throws transient output config away on any config reload where the file's
+// output section differs from the last load (niri.rs, reload_config). DMS
+// regenerates dms/outputs.kdl at runtime, so a stream could lose its output
+// mid-session and windows would silently fall back to the desktop monitor.
+// File state survives reloads.
+output "HDMI-A-1" {
+    off
+}
