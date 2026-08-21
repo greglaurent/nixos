@@ -11,3 +11,20 @@
 output "HDMI-A-1" {
     off
 }
+
+// Window placement during a stream. focus-monitor in Sunshine's prep-cmd is
+// only advisory: Steam maps its windows whenever it feels like it and restores
+// them to their last-used monitor, so games landed on DP-3 at random.
+//
+// This is deterministic instead. open-on-output resolves against niri's set of
+// MAPPED outputs (global_space.outputs() in handlers/xdg_shell.rs), and a
+// disabled output is not in that set — so while HDMI-A-1 is off, which is its
+// normal state, the lookup fails and placement falls through to the focused
+// monitor exactly as before. The rule only bites while Sunshine has the dongle
+// up, which is precisely when every new window belongs on it.
+//
+// No match block: this applies to all windows, because games have arbitrary
+// app-ids and enumerating them is a losing game.
+window-rule {
+    open-on-output "HDMI-A-1"
+}
