@@ -1,4 +1,4 @@
-{ nixos-hardware, home-manager, lib, ... }:
+{ nixos-hardware, home-manager, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -17,102 +17,36 @@
   # wake from S3/S5. Requires "Wake on LAN" enabled and ErP/EuP disabled in BIOS.
   networking.interfaces.enp74s0.wakeOnLan.enable = true;
 
-  # Hibernation target. The swap here is the LUKS mapper already declared in
-  # hardware-configuration.nix (swapDevices), and initrd already unlocks that
-  # container just below — so the mapper path is deterministic and there is no
-  # decrypted-swap UUID to look up, unlike rhizome. stage-1 would in fact find it
-  # on its own (it scans swapDevices for an swsuspend signature when resumeDevice
-  # is empty), but naming it makes the resume target explicit rather than
-  # dependent on probe order across zram + partition.
+  # Hibernation target: the LUKS swap mapper already declared in
+  # hardware-configuration.nix and unlocked by initrd below, so there is no
+  # decrypted-swap UUID to look up as there is on rhizome. stage-1 would find it
+  # by probing swapDevices for an swsuspend signature, but naming it keeps the
+  # target deterministic across zram + partition.
+  # Keep the swap partition >= RAM (68G vs 61Gi today) or the image cannot be
+  # written and hibernate fails at the point of use; zram carries runtime swap.
   #
-  # GATE before trusting this: the swap partition must be >= RAM, or the image
-  # cannot be written and hibernate fails at the point of use. zram (myPerformance)
-  # carries runtime swap; this partition exists to hold the image.
-  #   free -h            → RAM
-  #   swapon --show      → partition size, and confirm zram is separate
-  #
-  # WARNING — this conflicts with Wake-on-LAN above. Suspend-to-RAM resumes with
-  # the LUKS volume still open, which is why WoL works today. Hibernate powers off
-  # completely, so a magic packet wakes the box into the initrd passphrase prompt
-  # with no network: Moonlight cannot reach it and it sits there until someone
-  # types at the console. Remote wake + hibernate needs SSH in initrd
-  # (boot.initrd.network.ssh), which additionally needs enp74s0's driver module in
-  # boot.initrd.availableKernelModules — that list currently carries storage only.
+  # Hibernate is CONSOLE-ONLY here. It powers off completely, so a Wake-on-LAN
+  # packet lands at the initrd passphrase prompt with no network and nothing can
+  # reach the machine. Suspend-to-RAM — what the idle path actually does — keeps
+  # the LUKS volume open, which is why WoL works there. Nothing below changes the
+  # idle behaviour: `systemctl hibernate` is a deliberate, at-the-keyboard act.
   boot.resumeDevice = "/dev/mapper/luks-a3791415-752c-4222-909e-d5e16bf8fbb7";
 
-  # SSH in initrd, so a Wake-on-LAN wake into the LUKS prompt is recoverable
-  # remotely instead of stranding the machine. This is what makes hibernate and
-  # remote wake coexist: WoL powers the box on, you ssh to port 2222 as root,
-  # run `cryptsetup-askpass`, and boot proceeds — including the resume above.
-  #
-  # r8169 is enp74s0's driver (readlink /sys/class/net/enp74s0/device/driver).
-  # It has to be in the initrd or there is no network to ssh into; the list in
-  # hardware-configuration.nix carries storage controllers only. Lists merge, so
-  # this adds to it rather than replacing it.
-  boot.initrd.availableKernelModules = [ "r8169" ];
-  # Force-load rather than relying on udev modalias autoload inside initrd. If the
-  # NIC never binds there is no link, no DHCP, and the ssh attempt just hangs with
-  # nothing on the wire — indistinguishable from a firewall drop.
-  boot.initrd.kernelModules = [ "r8169" ];
-
-  # Bring the link up inside initrd. This host uses systemd stage 1
-  # (boot.initrd.systemd.enable is true), where boot.initrd.network.udhcpc does
-  # not exist — the build asserts on it — so DHCP is configured as an initrd
-  # networkd unit. Scoped to initrd only; NetworkManager still owns addressing on
-  # the booted system, and nothing here changes that.
-  # Root shell on the initrd console. Without it, a failure this early is a blank
-  # wall: no network means no ssh, and the LUKS prompt shows nothing about why.
-  # With it you can also append `rd.break` to the kernel line from systemd-boot
-  # (press `e` at the menu) to get a shell BEFORE the prompt and inspect
-  # `ip addr` / `systemctl status systemd-networkd` directly.
-  boot.initrd.systemd.emergencyAccess = true;
-
-  boot.initrd.systemd.network = {
-    enable = true;
-    networks."10-lan" = {
-      # Matched by MAC, not by name. Predictable interface naming depends on
-      # udev's net-naming rules being active, which is not guaranteed this early
-      # — if the NIC comes up as eth0 instead of enp74s0 a Name match silently
-      # never fires, leaving no address and an ssh that hangs forever. The MAC is
-      # the same one Wake-on-LAN targets above.
-      matchConfig.MACAddress = "9c:6b:00:58:c3:14";
-      networkConfig.DHCP = "yes";
-    };
-
-    # Declaring networking.interfaces.enp74s0 for wakeOnLan above makes NixOS
-    # generate a 40-enp74s0.network carrying DHCP=no (NetworkManager owns
-    # addressing on the booted system, so that is correct there) — and that unit
-    # is inherited into the initrd, where it is NOT correct: there is no
-    # NetworkManager this early, so the interface gets no address and ssh has
-    # nothing to connect to.
-    #
-    # 10-lan sorts first and should win on lexical order, but relying on that
-    # left the interface unconfigured in practice. Force the inherited unit to
-    # agree instead, so an address is obtained whichever unit matches. Scoped to
-    # boot.initrd.*, so the booted system's DHCP=no is untouched.
-    networks."40-enp74s0".networkConfig.DHCP = lib.mkForce "yes";
-  };
-
-  boot.initrd.network = {
-    enable = true;
-    ssh = {
-      enable = true;
-      # Deliberately not 22: this is a different host key than the booted system's,
-      # and sharing the port would trip known_hosts mismatches on every unlock.
-      port = 2222;
-      authorizedKeys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILCKYK7X2lRe3AhbpmtzeRGIrwOrd2a7OQ9psxC1mzGa gregory.m.laurent@gmail.com"
-      ];
-      # STRING, not a Nix path. A string routes through boot.initrd.secrets and is
-      # appended to the initrd by the bootloader; a path literal would copy the
-      # PRIVATE key into the world-readable Nix store. Generate it once as root,
-      # and do NOT reuse the booted system's host key — the initrd lives on the
-      # unencrypted ESP:
-      #   mkdir -p /etc/secrets/initrd
-      #   ssh-keygen -t ed25519 -N "" -f /etc/secrets/initrd/ssh_host_ed25519_key
-      hostKeys = [ "/etc/secrets/initrd/ssh_host_ed25519_key" ];
-    };
-  };
+  # DO NOT re-add SSH-in-initrd without physical access to this machine.
+  # It was tried and backed out after locking the box out twice:
+  #   * On systemd stage 1, initrd networkd configures enp74s0 and hands it to
+  #     stage 2 STILL CONFIGURED — boot.initrd.network.flushBeforeStage2 only
+  #     flushes for the script initrd (it is gated on !boot.initrd.systemd.enable),
+  #     so it is a no-op here whatever its value.
+  #   * NetworkManager then treats the device as unmanaged. The interface keeps
+  #     its initrd DHCP lease, so the box answers on an unexpected address, but
+  #     nothing writes resolv.conf: DNS and mDNS both die, Moonlight cannot see
+  #     the host, and `git fetch` fails to resolve.
+  #   * Recovery required a manual rollback at the console.
+  # The missing piece is an initrd unit ordered before initrd-switch-root.target
+  # that flushes the address and downs the link. Until that exists and is proven
+  # in an extracted initrd, hibernate stays console-only and WoL stays paired with
+  # suspend-to-RAM, which works.
 
   # LUKS root. REPLACE both the mapper name and the UUID with the real values
   # from plateau (`sudo blkid` → the crypto_LUKS partition's UUID). The name
