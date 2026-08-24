@@ -1,4 +1,4 @@
-{ nixos-hardware, home-manager, ... }:
+{ nixos-hardware, home-manager, lib, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -50,18 +50,47 @@
   # hardware-configuration.nix carries storage controllers only. Lists merge, so
   # this adds to it rather than replacing it.
   boot.initrd.availableKernelModules = [ "r8169" ];
+  # Force-load rather than relying on udev modalias autoload inside initrd. If the
+  # NIC never binds there is no link, no DHCP, and the ssh attempt just hangs with
+  # nothing on the wire — indistinguishable from a firewall drop.
+  boot.initrd.kernelModules = [ "r8169" ];
 
   # Bring the link up inside initrd. This host uses systemd stage 1
   # (boot.initrd.systemd.enable is true), where boot.initrd.network.udhcpc does
   # not exist — the build asserts on it — so DHCP is configured as an initrd
   # networkd unit. Scoped to initrd only; NetworkManager still owns addressing on
   # the booted system, and nothing here changes that.
+  # Root shell on the initrd console. Without it, a failure this early is a blank
+  # wall: no network means no ssh, and the LUKS prompt shows nothing about why.
+  # With it you can also append `rd.break` to the kernel line from systemd-boot
+  # (press `e` at the menu) to get a shell BEFORE the prompt and inspect
+  # `ip addr` / `systemctl status systemd-networkd` directly.
+  boot.initrd.systemd.emergencyAccess = true;
+
   boot.initrd.systemd.network = {
     enable = true;
-    networks."10-enp74s0" = {
-      matchConfig.Name = "enp74s0";
+    networks."10-lan" = {
+      # Matched by MAC, not by name. Predictable interface naming depends on
+      # udev's net-naming rules being active, which is not guaranteed this early
+      # — if the NIC comes up as eth0 instead of enp74s0 a Name match silently
+      # never fires, leaving no address and an ssh that hangs forever. The MAC is
+      # the same one Wake-on-LAN targets above.
+      matchConfig.MACAddress = "9c:6b:00:58:c3:14";
       networkConfig.DHCP = "yes";
     };
+
+    # Declaring networking.interfaces.enp74s0 for wakeOnLan above makes NixOS
+    # generate a 40-enp74s0.network carrying DHCP=no (NetworkManager owns
+    # addressing on the booted system, so that is correct there) — and that unit
+    # is inherited into the initrd, where it is NOT correct: there is no
+    # NetworkManager this early, so the interface gets no address and ssh has
+    # nothing to connect to.
+    #
+    # 10-lan sorts first and should win on lexical order, but relying on that
+    # left the interface unconfigured in practice. Force the inherited unit to
+    # agree instead, so an address is obtained whichever unit matches. Scoped to
+    # boot.initrd.*, so the booted system's DHCP=no is untouched.
+    networks."40-enp74s0".networkConfig.DHCP = lib.mkForce "yes";
   };
 
   boot.initrd.network = {
