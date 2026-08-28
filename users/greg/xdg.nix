@@ -17,6 +17,8 @@ in
 
   # ── $BROWSER command ──
   home.sessionVariables.BROWSER = "vivaldi";
+  # (marginalia's ~/Media/Books library is created from `myMarginaliaLibrary' in
+  # org.nix — single source with the env var the doom config reads — not here.)
 
 
   # DEFAULTS

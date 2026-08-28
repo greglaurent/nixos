@@ -159,7 +159,519 @@
 (setq org-agenda-skip-unavailable-files t)
 (use-package! org-noter
   :config
-  (setq org-noter-notes-search-path (list (expand-file-name "noter" org-directory))))
+  (setq org-noter-notes-search-path (list (expand-file-name "noter" org-directory))
+        ;; Split the CURRENT frame instead of popping a new OS window (default is t).
+        org-noter-always-create-frame nil))
+
+;; A `C-c'-space partner for `M-x' (both reach `execute-extended-command', the run-any-
+;; command-by-name launcher) — for when Alt+x is awkward. `M-x' still works everywhere.
+(map! "C-c x" #'execute-extended-command)
+
+;; ── marginalia capture (§4a: per-source folder → parent node + atomic children) ──
+;; Reading model: from the PDF, create the SOURCE PARENT once (C-c n — title from your
+;; selection, so highlight the doc title first). The parent gets its OWN folder under
+;; `marginalia-notes-dir' (roam/marginalia/), an :ID:, and a ROBUST reference to the paper;
+;; it's where long-form
+;; notes live and it's the context every child reads. Then each highlight becomes an
+;; ATOMIC CHILD node (C-c i / M-i) saved in that folder, all metadata auto-stamped
+;; (:ID:, parent id, page, quote block, id-link back to the parent) so you write ONLY the
+;; note body. C-c I harvests every existing pdf-annot highlight into children at once.
+;;
+;; The paper is NEVER co-located with the notes and NO path is ever baked into a note. A
+;; book is the "one" — identified INTRINSICALLY by its content hash (`:MARGINALIA_DOC_ID:'),
+;; the ONLY reference a note holds; the notes are the "many" that point at that identity.
+;; WHERE the book lives is a separate, derived concern: books may sit in any number of
+;; unrelated folders — there is no single library root. A rebuildable index (like
+;; `org-id-locations') maps hash → current path, recorded at capture and refreshed on open;
+;; if a book has moved, `marginalia-open-source' rescans `marginalia-library-dirs' (a LIST
+;; of search roots, possibly empty) by hash, and failing that asks you to locate it once.
+;; No linking/AI yet. (org-pdftools/org-noter-pdftools NOT loaded — the `listp' crash.)
+
+(defgroup marginalia-notes nil
+  "Personal PDF→org note capture (distinct from the `marginalia' completion package)."
+  :group 'org)
+
+(defcustom marginalia-library-dirs
+  (let ((v (getenv "MARGINALIA_LIBRARY_DIRS")))
+    (and v (split-string v ":" t)))
+  "Directories to search — by content hash — for a source document whose cached location
+has gone stale (a book was moved or renamed, or you are on another machine).
+A LIST: your books may live in any number of unrelated folders; none has to be a single
+flat root, and this may be empty (you are then asked to locate a moved book once).  Capture
+records a book's exact path, so opening a book that has not moved never needs this.
+Seeded from $MARGINALIA_LIBRARY_DIRS (colon-separated), which nix sets from the
+`myMarginaliaLibrary' option — so the library path is defined once, in the nix config,
+never hardcoded here."
+  :type '(repeat directory) :group 'marginalia-notes)
+
+(defcustom marginalia-notes-dir nil
+  "Directory holding marginalia's per-source folders and its location index.
+Must live UNDER `org-roam-directory' so org-roam indexes the notes.  When nil (default),
+resolves to a `marginalia/' subfolder of `org-roam-directory' — namespaced so source
+folders don't intermingle with hand-written roam notes."
+  :type '(choice (const :tag "roam/marginalia (default)" nil) directory)
+  :group 'marginalia-notes)
+
+(defun marginalia--notes-dir ()
+  "The resolved marginalia notes directory (see `marginalia-notes-dir')."
+  (or marginalia-notes-dir (expand-file-name "marginalia" org-roam-directory)))
+
+(defvar marginalia--doc-locations nil
+  "Alist (HASH . ABSOLUTE-PATH): the rebuildable index from a book's content id to where it
+currently lives.  A derived cache — like `org-id-locations', never canonical; delete it and
+it rebuilds from `marginalia-library-dirs'.")
+
+(defun marginalia--slug (s)
+  "A filesystem-safe slug from string S."
+  (string-trim (replace-regexp-in-string "[^a-z0-9]+" "-" (downcase (string-trim s)))
+               "-+" "-+"))
+
+(defun marginalia--gist (s &optional n)
+  "First N (default 12) words of S as a one-line human label."
+  (string-join (seq-take (split-string (string-trim s)) (or n 12)) " "))
+
+(defun marginalia--pdf-selection ()
+  "The current PDF text selection as a trimmed string, or nil."
+  (let* ((text (condition-case nil (pdf-view-active-region-text) (error nil)))
+         (s (and text (string-trim (string-join text " ")))))
+    (and s (not (string-empty-p s)) s)))
+
+(defun marginalia--doc-hash (file)
+  "Content identity (sha1 of the raw bytes) of FILE."
+  (with-temp-buffer
+    (set-buffer-multibyte nil)
+    (insert-file-contents-literally file)
+    (secure-hash 'sha1 (current-buffer))))
+
+(defun marginalia--scan-for-hash (dir hash)
+  "First file under DIR whose content hash equals HASH, else nil."
+  (and (file-directory-p dir)
+       (seq-find (lambda (f) (equal (marginalia--doc-hash f) hash))
+                 (directory-files-recursively dir "\\.\\(?:pdf\\|epub\\)\\'"))))
+
+;; ── book identity → location index (derived, rebuildable; mirrors `org-id-locations') ──
+(defun marginalia--doc-locations-file ()
+  (expand-file-name ".marginalia-doc-locations.eld" (marginalia--notes-dir)))
+
+(defun marginalia--doc-locations-load ()
+  (let ((f (marginalia--doc-locations-file)))
+    (when (and (null marginalia--doc-locations) (file-exists-p f))
+      (with-temp-buffer
+        (insert-file-contents f)
+        (setq marginalia--doc-locations (ignore-errors (read (current-buffer))))))
+    marginalia--doc-locations))
+
+(defun marginalia--doc-record (hash path)
+  "Record HASH → PATH (absolute) in the location index and persist it. Return the path."
+  (marginalia--doc-locations-load)
+  (setf (alist-get hash marginalia--doc-locations nil nil #'equal) (expand-file-name path))
+  (with-temp-file (marginalia--doc-locations-file)
+    (prin1 marginalia--doc-locations (current-buffer)))
+  (expand-file-name path))
+
+(defun marginalia--doc-locate (hash)
+  "Absolute path of the book with content HASH, or nil.
+Consults the cached index; if its path is stale, rescans `marginalia-library-dirs' (any
+number of unrelated roots) by hash and re-records.  Never assumes a single library root."
+  (when hash
+    (marginalia--doc-locations-load)
+    (let ((cached (alist-get hash marginalia--doc-locations nil nil #'equal)))
+      (if (and cached (file-exists-p cached)) cached
+        (let ((found (seq-some (lambda (d) (marginalia--scan-for-hash (expand-file-name d) hash))
+                               marginalia-library-dirs)))
+          (and found (marginalia--doc-record hash found)))))))
+
+(defun marginalia--doc-prompt (hash)
+  "Ask where the book with content HASH now lives; verify its contents and record it."
+  (let ((f (read-file-name "Locate source document: " nil nil t)))
+    (when (and f (file-exists-p f) (not (file-directory-p f))
+               (or (equal (marginalia--doc-hash f) hash)
+                   (y-or-n-p "That file's contents don't match this note's source — use it anyway? ")))
+      (marginalia--doc-record hash f))))
+
+(defun marginalia--file-prop (file prop)
+  "Value of the top-level :PROP: in org FILE, or nil."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (goto-char (point-min))
+    (when (re-search-forward (format "^:%s:[ \t]+\\(.+?\\)[ \t]*$" (regexp-quote prop)) nil t)
+      (match-string 1))))
+
+(defun marginalia--file-keyword (file kw)
+  "Value of the #+KW: line in org FILE, or nil."
+  (with-temp-buffer
+    (insert-file-contents file)
+    (goto-char (point-min))
+    (when (re-search-forward (format "^#\\+%s:[ \t]+\\(.+?\\)[ \t]*$" (regexp-quote kw)) nil t)
+      (match-string 1))))
+
+(defun marginalia--set-file-prop (file prop value)
+  "Set the top-level :PROP: to VALUE in org FILE (in its first property drawer)."
+  (with-current-buffer (find-file-noselect file)
+    (save-excursion
+      (goto-char (point-min))
+      (if (re-search-forward (format "^:%s:.*$" (regexp-quote prop)) nil t)
+          (replace-match (format ":%s: %s" prop value) t t)
+        (when (re-search-forward "^:PROPERTIES:$" nil t)
+          (end-of-line) (insert (format "\n:%s: %s" prop value)))))
+    (save-buffer)))
+
+(defun marginalia--refingerprint (pdf pfile)
+  "After PDF's bytes changed (a highlight was baked in), update parent PFILE's
+`:MARGINALIA_DOC_ID:' and the location index so hash-based resolution still matches the
+current file. No-op if the hash is unchanged."
+  (let ((old (marginalia--file-prop pfile "MARGINALIA_DOC_ID"))
+        (new (marginalia--doc-hash pdf)))
+    (unless (equal old new)
+      (marginalia--set-file-prop pfile "MARGINALIA_DOC_ID" new)
+      (marginalia--doc-locations-load)
+      (when old
+        (setq marginalia--doc-locations (assoc-delete-all old marginalia--doc-locations)))
+      (marginalia--doc-record new pdf))))
+
+(defvar-local marginalia--parent nil
+  "Plist (:id :file :dir :title) of this PDF's source parent, set by `marginalia-source-here'.")
+
+(defun marginalia--show-reading-layout (pfile)
+  "Lay the current window out as PDF | parent-note (PFILE); cursor stays in the PDF."
+  (delete-other-windows)
+  (set-window-buffer (split-window-right) (find-file-noselect pfile)))
+
+(defun marginalia--open-parent (pfile)
+  "Set PFILE as the source context and lay out the PDF | parent reading workspace."
+  (marginalia--show-reading-layout pfile)
+  (setq marginalia--parent
+        (list :id (marginalia--file-prop pfile "ID") :file pfile
+              :dir (file-name-directory pfile)
+              :title (or (marginalia--file-keyword pfile "title") (file-name-base pfile)))))
+
+(defun marginalia--parent-for-pdf (pdf)
+  "The existing parent note whose `:MARGINALIA_DOC_ID:' matches PDF's content hash, or nil.
+Scans each per-source folder under `marginalia-notes-dir' for its `<slug>/<slug>.org'."
+  (let ((dir (marginalia--notes-dir)))
+    (and (file-directory-p dir)
+         (let ((hash (marginalia--doc-hash pdf)))
+           (seq-some
+            (lambda (sub)
+              (let ((pf (expand-file-name
+                         (concat (file-name-nondirectory (directory-file-name sub)) ".org") sub)))
+                (and (file-exists-p pf)
+                     (equal (marginalia--file-prop pf "MARGINALIA_DOC_ID") hash)
+                     pf)))
+            (seq-filter #'file-directory-p (directory-files dir t "\\`[^.]")))))))
+
+(defun marginalia-source-here ()
+  "Open the reading workspace for the PDF in this buffer.
+If a SOURCE PARENT already exists for this book it is opened (found by content hash, then by
+title-slug) — no title needed. Otherwise a new parent is created: title = the current
+selection (highlight the document title first) else a prompt; it gets its own folder under
+`marginalia-notes-dir', an :ID:, and the book's identity `:MARGINALIA_DOC_ID:'. Either way,
+lays out PDF | parent and sets the capture context."
+  (interactive)
+  (unless (derived-mode-p 'pdf-view-mode)
+    (user-error "Run this from the PDF buffer"))
+  (require 'org-roam)
+  (require 'org-id)
+  (let* ((pdf      (buffer-file-name))
+         (existing (marginalia--parent-for-pdf pdf)))
+    (if existing
+        (progn (marginalia--open-parent existing)
+               (message "Source: %s" (plist-get marginalia--parent :title)))
+      (let* ((title (or (marginalia--pdf-selection) (read-string "Source title: ")))
+             (_ (when (string-empty-p (string-trim title)) (user-error "Empty title")))
+             (slug (marginalia--slug title))
+             (dir  (expand-file-name slug (marginalia--notes-dir)))
+             (file (expand-file-name (concat slug ".org") dir)))
+        (if (file-exists-p file)                    ; title-slug match (e.g. hash drifted)
+            (progn (marginalia--open-parent file)
+                   (message "Source: %s" (plist-get marginalia--parent :title)))
+          (make-directory dir t)
+          (let ((id (org-id-uuid)) (hash (marginalia--doc-hash pdf)))
+            (with-temp-file file
+              (insert (format (concat ":PROPERTIES:\n:ID:       %s\n:MARGINALIA_DOC_ID: %s\n:END:\n"
+                                      "#+title: %s\n\n* Notes\n\n")
+                              id hash title)))
+            (marginalia--doc-record hash pdf)
+            (org-roam-db-update-file file)
+            (marginalia--open-parent file)
+            (message "Source: %s  (children → %s/)" title (file-name-nondirectory dir))))))))
+
+(defun marginalia--new-child (quote page &optional open)
+  "Create an atomic CHILD note for QUOTE at PAGE in the current parent's folder.
+Return (ID . FILE). With OPEN non-nil, visit it (other window) at the body.  The child
+carries NO paper path — only the parent id + page; the paper is reached via the parent
+with `marginalia-open-source'."
+  (unless marginalia--parent
+    (user-error "No source parent yet — create it first with `marginalia-source-here' (C-c n)"))
+  (require 'org-roam)
+  (require 'org-id)
+  (let* ((dir   (plist-get marginalia--parent :dir))
+         (pid   (plist-get marginalia--parent :id))
+         (id    (org-id-uuid))
+         (stamp (format-time-string "%Y%m%dT%H%M%S"))
+         (file  (expand-file-name (format "%s-%s.org" stamp (substring id 0 8)) dir))
+         (title (marginalia--gist quote)))
+    (with-temp-file file
+      (insert (format (concat ":PROPERTIES:\n:ID:       %s\n:MARGINALIA_SOURCE: id:%s\n"
+                              ":MARGINALIA_PAGE: %d\n:END:\n#+title: %s\n\n"
+                              "#+begin_quote\n%s\n#+end_quote\n[[id:%s][source: p.%d]]\n\n")
+                      id pid page title quote pid page)))
+    (org-roam-db-update-file file)
+    (when open
+      (find-file-other-window file)
+      (goto-char (point-max)))
+    (cons id file)))
+
+(defun marginalia-open-source ()
+  "From a marginalia note (parent or child), open its source document at the note's page.
+Finds the book by its content id via the location index; if it has moved, rescans
+`marginalia-library-dirs', and failing that asks you to locate it once (re-recording it).
+Sets the capture context so you can keep adding children."
+  (interactive)
+  (unless (buffer-file-name) (user-error "Not visiting a file"))
+  (let* ((dir   (file-name-directory (buffer-file-name)))
+         (pfile (expand-file-name
+                 (concat (file-name-nondirectory (directory-file-name dir)) ".org") dir)))
+    (unless (file-exists-p pfile)
+      (user-error "No source parent in this folder — not a marginalia note?"))
+    (let* ((hash (marginalia--file-prop pfile "MARGINALIA_DOC_ID"))
+           (abs  (or (marginalia--doc-locate hash) (marginalia--doc-prompt hash)))
+           (page (let ((p (marginalia--file-prop (buffer-file-name) "MARGINALIA_PAGE")))
+                   (and p (string-to-number p)))))
+      (unless abs
+        (user-error "Source not found — set `marginalia-library-dirs' or locate the file"))
+      (find-file abs)
+      (when page (ignore-errors (pdf-view-goto-page page)))
+      (marginalia--show-reading-layout pfile)         ; PDF | parent reading workspace
+      (setq marginalia--parent
+            (list :id (marginalia--file-prop pfile "ID") :file pfile :dir dir
+                  :title (or (marginalia--file-keyword pfile "title") (file-name-base pfile))))
+      (message "Opened source%s" (if page (format " at p.%d" page) "")))))
+
+(defun marginalia--do-capture (open)
+  "Selection → atomic CHILD note + a baked, note-linked highlight; re-fingerprint the book.
+With OPEN non-nil, visit the note in a bottom split to annotate; otherwise just flag it and
+stay in the PDF."
+  (unless (derived-mode-p 'pdf-view-mode)
+    (user-error "Run this from the PDF buffer"))
+  (unless marginalia--parent
+    (user-error "No source context — open the source (C-c n / `marginalia-open-source') first"))
+  (require 'pdf-annot)
+  (let ((region (ignore-errors (pdf-view-active-region)))  ; (PAGE . edges), grab before text read
+        (quote  (marginalia--pdf-selection)))
+    (unless quote
+      (user-error "No PDF text selected — drag across the text first"))
+    (let* ((page  (pdf-view-current-page))
+           (pfile (plist-get marginalia--parent :file))
+           (res   (marginalia--new-child quote page))       ; (ID . FILE); don't open here
+           (id    (car res))
+           (file  (cdr res))
+           (marked nil))
+      (when region
+        (condition-case err
+            (progn
+              (pdf-annot-add-highlight-markup-annotation
+               region nil `((contents . ,(marginalia--gist quote)) (label . ,id)))
+              (save-buffer)                                  ; persist the highlight into the PDF
+              (marginalia--refingerprint (buffer-file-name) pfile)  ; bytes changed → re-id
+              (setq marked t))
+          (error (message "marginalia: highlight not saved (%s) — note kept"
+                          (error-message-string err)))))
+      (if open
+          (progn                                            ; annotate now, in a bottom split
+            (select-window (display-buffer (find-file-noselect file)
+                                           '(display-buffer-at-bottom (window-height . 0.3))))
+            (goto-char (point-max))
+            (message "Captured child (p.%d)%s" page (if marked "" " — no highlight")))
+        (message "Flagged (p.%d)%s" page (if marked "" " — no highlight"))))))
+
+(defun marginalia-capture-pdf ()
+  "Capture the selection as a child note + highlight, and open the note to annotate."
+  (interactive) (marginalia--do-capture t))
+
+(defun marginalia-highlight-pdf ()
+  "Highlight the selection: create the child note + highlight + save, but DON'T open it.
+For marking a passage to annotate later — you stay in the PDF and keep reading."
+  (interactive) (marginalia--do-capture nil))
+
+(defun marginalia--pdf-annot-text (a)
+  "Highlighted text of markup annotation object A."
+  (let ((page  (pdf-annot-get a 'page))
+        (edges (or (pdf-annot-get a 'markup-edges)
+                   (list (pdf-annot-get a 'edges)))))
+    (string-trim (mapconcat (lambda (e) (pdf-info-gettext page e)) edges " "))))
+
+(defun marginalia--annot-noted-p (a)
+  "Non-nil if annotation A already links to an existing marginalia note (via its `label')."
+  (let ((label (pdf-annot-get a 'label)))
+    (and label (not (string-empty-p label)) (marginalia--note-file-for-id label))))
+
+(defun marginalia-capture-pdf-annotations (&optional all-pages)
+  "Turn EXISTING pdf highlight annotations into atomic CHILD notes, SKIPPING any that
+already have a marginalia note. Each newly-noted highlight is linked to its note (its
+`label' set to the note id) so re-running never duplicates and clicking it opens the note.
+Current page by default; with a prefix arg (C-u), the whole document."
+  (interactive "P")
+  (unless (derived-mode-p 'pdf-view-mode)
+    (user-error "Run this from the PDF buffer"))
+  (unless marginalia--parent
+    (user-error "No source context — open the source (C-c n / `marginalia-open-source') first"))
+  (require 'pdf-annot)
+  (let* ((page   (pdf-view-current-page))
+         (annots (pdf-annot-getannots (unless all-pages page)
+                                      '(highlight underline squiggly strike-out)))
+         (n 0) (skipped 0))
+    (unless annots
+      (user-error "No highlight annotations on %s"
+                  (if all-pages "this document" (format "page %d" page))))
+    (dolist (a annots)
+      (if (marginalia--annot-noted-p a)
+          (setq skipped (1+ skipped))
+        (let ((text (marginalia--pdf-annot-text a)))
+          (unless (string-empty-p text)
+            (let ((id (car (marginalia--new-child text (pdf-annot-get a 'page)))))
+              (pdf-annot-put a 'label id)                    ; link highlight → note
+              (when (string-empty-p (or (pdf-annot-get a 'contents) ""))
+                (pdf-annot-put a 'contents (marginalia--gist text)))  ; readable tooltip
+              (setq n (1+ n)))))))
+    (when (> n 0)
+      (save-buffer)                                          ; persist the new labels/contents
+      (marginalia--refingerprint (buffer-file-name) (plist-get marginalia--parent :file)))
+    (message "Harvested %d note(s)%s" n
+             (if (> skipped 0) (format ", skipped %d already-noted" skipped) ""))))
+
+(defun marginalia--children-on-page (dir page)
+  "Child note files in DIR captured from PAGE (matched on their :MARGINALIA_PAGE:)."
+  (let ((p (number-to-string page)))
+    (seq-filter (lambda (f) (equal (marginalia--file-prop f "MARGINALIA_PAGE") p))
+                (directory-files dir t "\\.org\\'"))))
+
+(defun marginalia-notes-for-page ()
+  "Show the child note(s) captured from the current PDF page in a bottom split.
+Uses the source context set by `marginalia-source-here'/`marginalia-open-source'. If several
+notes came from the page, pick one (each is titled by the first words of its quote, so the
+picker doubles as choosing which highlight). The PDF keeps focus."
+  (interactive)
+  (unless (derived-mode-p 'pdf-view-mode)
+    (user-error "Run this from the PDF"))
+  (unless marginalia--parent
+    (user-error "No source context — open the source (C-c n, or `marginalia-open-source') first"))
+  (let* ((page  (pdf-view-current-page))
+         (files (marginalia--children-on-page (plist-get marginalia--parent :dir) page)))
+    (unless files
+      (user-error "No notes captured from page %d" page))
+    (let ((file (if (cdr files)
+                    (let ((alist (mapcar (lambda (f)
+                                           (cons (or (marginalia--file-keyword f "title")
+                                                     (file-name-base f))
+                                                 f))
+                                         files)))
+                      (cdr (assoc (completing-read (format "Note (p.%d): " page) alist nil t)
+                                  alist)))
+                  (car files))))
+      (display-buffer (find-file-noselect file)
+                      '(display-buffer-at-bottom (window-height . 0.3))))))
+
+;; ── deletion coupling: highlights and notes don't orphan each other ──────────────
+;; A highlight's `contents' holds its child note's :ID:. Deleting a NOTE
+;; (`marginalia-delete-note') removes its highlight too (the highlight is disposable).
+;; Deleting a HIGHLIGHT in pdf-view offers to delete its note (default no — a note holds
+;; your explication + graph links, so never silently). Both paths re-fingerprint.
+(defvar marginalia--deleting nil
+  "Bound to t while marginalia performs a coordinated note+highlight delete, to keep the
+pdf-annot deletion hook from re-prompting for the same note.")
+
+(defun marginalia--note-file-for-id (id)
+  "The note file whose top-level :ID: is ID — the current source folder first, then roam."
+  (or (and marginalia--parent
+           (let ((dir (plist-get marginalia--parent :dir)))
+             (and (file-directory-p dir)
+                  (seq-find (lambda (f) (equal (marginalia--file-prop f "ID") id))
+                            (directory-files dir t "\\.org\\'")))))
+      (ignore-errors
+        (require 'org-roam)
+        (let ((n (org-roam-node-from-id id))) (and n (org-roam-node-file n))))))
+
+(defun marginalia--delete-note-file (file)
+  "Delete note FILE: kill its buffer, remove it, deregister it from org-roam."
+  (when (and file (file-exists-p file))
+    (let ((buf (find-buffer-visiting file))) (when buf (kill-buffer buf)))
+    (delete-file file)
+    (ignore-errors (require 'org-roam) (org-roam-db-clear-file file))
+    (message "marginalia: deleted note %s" (file-name-nondirectory file))))
+
+(defun marginalia--on-annots-modified (closure)
+  "`pdf-annot-modified-functions' handler: when a marginalia-linked highlight is deleted,
+offer to delete its note too. Skipped during marginalia's own coordinated delete."
+  (unless marginalia--deleting
+    (dolist (a (funcall closure :deleted))
+      (let* ((id   (ignore-errors (pdf-annot-get a 'label)))
+             (note (and id (not (string-empty-p id)) (marginalia--note-file-for-id id))))
+        (when (and note
+                   (y-or-n-p "marginalia: highlight deleted — also delete its linked note? "))
+          (marginalia--delete-note-file note))))))
+
+(defun marginalia--enable-annot-hook ()
+  (add-hook 'pdf-annot-modified-functions #'marginalia--on-annots-modified nil t))
+(add-hook 'pdf-view-mode-hook #'marginalia--enable-annot-hook)
+
+(defun marginalia--activate-handler (a)
+  "Clicking a marginalia highlight opens its linked note in a bottom split.
+The note id lives in the annotation's `label'; `contents' holds a readable gist for the
+tooltip. Returns non-nil (handled) so pdf-tools' default edit-contents behaviour is
+skipped for our highlights; nil for any other annotation so it behaves normally."
+  (let* ((id   (ignore-errors (pdf-annot-get a 'label)))
+         (file (and id (not (string-empty-p id)) (marginalia--note-file-for-id id))))
+    (when file
+      (select-window (display-buffer (find-file-noselect file)
+                                     '(display-buffer-at-bottom (window-height . 0.3))))
+      t)))
+(add-hook 'pdf-annot-activate-handler-functions #'marginalia--activate-handler)
+
+(defun marginalia-delete-note ()
+  "Delete THIS marginalia child note and remove its highlight from the source PDF.
+Run from the child note's buffer; refuses on a source parent (deleting a whole source is
+not this command's job). Re-fingerprints the book after removing the highlight."
+  (interactive)
+  (unless (buffer-file-name) (user-error "Not visiting a file"))
+  (let ((id  (marginalia--file-prop (buffer-file-name) "ID"))
+        (src (marginalia--file-prop (buffer-file-name) "MARGINALIA_SOURCE")))
+    (unless src
+      (user-error "Not a child note (no :MARGINALIA_SOURCE:) — refusing"))
+    (unless (y-or-n-p "Delete this note and its highlight? ") (user-error "Aborted"))
+    (let* ((note  (buffer-file-name))
+           (dir   (file-name-directory note))
+           (pfile (expand-file-name
+                   (concat (file-name-nondirectory (directory-file-name dir)) ".org") dir))
+           (pdf   (marginalia--doc-locate (marginalia--file-prop pfile "MARGINALIA_DOC_ID"))))
+      (when (and pdf (file-exists-p pdf))
+        (require 'pdf-annot)
+        (with-current-buffer (find-file-noselect pdf)
+          (let ((hits (seq-filter (lambda (a) (equal (pdf-annot-get a 'label) id))
+                                  (pdf-annot-getannots))))
+            (when hits
+              (let ((marginalia--deleting t))
+                (dolist (a hits) (pdf-annot-delete a))
+                (save-buffer))
+              (marginalia--refingerprint pdf pfile)))))
+      (marginalia--delete-note-file note))))
+
+(map! :after pdf-tools
+      :map pdf-view-mode-map
+      "C-c n" #'marginalia-source-here             ; create/open the source parent (title = selection)
+      "C-c i" #'marginalia-capture-pdf             ; highlight → note, open it to annotate
+      "M-i"   #'marginalia-capture-pdf             ; same (the key you reach for)
+      "C-c h" #'marginalia-highlight-pdf           ; highlight → note, but DON'T open (mark & keep reading)
+      "C-c I" #'marginalia-capture-pdf-annotations ; harvest existing highlights → notes (no dups)
+      "C-c o" #'marginalia-notes-for-page)         ; this page's note(s) → bottom split
+
+;; From a marginalia note (parent or child), open its source PDF at the note's page.
+;; The note stores no path — this resolves the book by content hash — so it's the ONLY
+;; way back to the paper; give it a key on the org side mirroring the pdf-side C-c n/i/I.
+;; (Errors gracefully in non-marginalia org buffers.)
+(map! :after org
+      :map org-mode-map
+      "C-c o" #'marginalia-open-source)
 
 ;; ── Org appearance ───────────────────────────────────────────────────────────
 ;; org-modern (minad — same lineage as the vertico/corfu stack here): pill-styled

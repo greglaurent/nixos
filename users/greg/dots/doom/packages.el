@@ -59,6 +59,12 @@
 (package! ron-mode)  ; major mode for Rusty Object Notation (.ron)
 (package! nov)
 (package! org-noter)
+;; NOTE: org-pdftools / org-noter-pdftools are deliberately NOT used. Their integration
+;; turns org-noter's `location' into a cl-defstruct, which triggers the long-standing
+;; `wrong-type-argument: listp' crash (org-pdftools issues #63/#73/#93/#96, 2020–2023 —
+;; org-noter does `(car location)`, which breaks on a struct). PDF highlight → note is
+;; done with PLAIN org-noter (`org-noter-insert-precise-note', M-i) plus the
+;; self-contained `marginalia-capture-pdf' (C-c i) in config.el — neither needs the bridge.
 (package! empv)   ; control mpv from Emacs (play URLs/local files/directories)
 
 ;; Org appearance. org-modern is minad's (same lineage as the vertico/corfu

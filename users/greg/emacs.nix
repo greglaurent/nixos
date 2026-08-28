@@ -19,6 +19,19 @@
   };
 
   config = {
+    # greg's org lives as DATA under ~/Documents/org (org-roam at roam/, marginalia
+    # source folders at roam/marginalia/), NOT in the config tree: the marginalia
+    # corpus generates a folder-per-source, many child notes, and a self-rewriting
+    # location index — churn that doesn't belong in a declarative config repo. The
+    # config only POINTS here; everything (org-directory, roam, noter, agenda) derives
+    # from this one knob.
+    myOrgDir = "${config.home.homeDirectory}/Documents/org";
+
+    # marginalia's book library lives at ~/Media/Books (outside org). Single source:
+    # this option drives the mkdir, the $MARGINALIA_LIBRARY_DIRS env, and the daemon
+    # pin below — the doom config reads the env, nothing hardcoded in elisp.
+    myMarginaliaLibrary = [ "${config.home.homeDirectory}/Media/Books" ];
+
     programs.doom-emacs = {
       enable = true;
       # doomDir is the reproducible dots/doom tree, whole and unfiltered. The
@@ -76,6 +89,7 @@
       "DOOM_CONFIG_DIR=${config.myDoomConfigDir}"
       "DOOM_CONTENT_DIR=${config.myDoomContentDir}"
       "ORG_DIRECTORY=${config.myOrgDir}"
+      "MARGINALIA_LIBRARY_DIRS=${lib.concatStringsSep ":" config.myMarginaliaLibrary}"
     ];
   };
 }
