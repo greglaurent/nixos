@@ -4,6 +4,7 @@
   home.packages = with pkgs; [
     gh
     just
+    gnumake
     glances
     wget
     clang
