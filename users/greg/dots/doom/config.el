@@ -656,22 +656,27 @@ not this command's job). Re-fingerprints the book after removing the highlight."
               (marginalia--refingerprint pdf pfile)))))
       (marginalia--delete-note-file note))))
 
+;; All marginalia lives under a `C-c m' (marginalia) prefix. PDF-side commands (capture)
+;; in pdf-view-mode; note-side commands (open source, delete) in org-mode. `M-i' is kept as
+;; a single-chord alias for capture (the key you reach for).
 (map! :after pdf-tools
       :map pdf-view-mode-map
-      "C-c n" #'marginalia-source-here             ; create/open the source parent (title = selection)
-      "C-c i" #'marginalia-capture-pdf             ; highlight → note, open it to annotate
-      "M-i"   #'marginalia-capture-pdf             ; same (the key you reach for)
-      "C-c h" #'marginalia-highlight-pdf           ; highlight → note, but DON'T open (mark & keep reading)
-      "C-c I" #'marginalia-capture-pdf-annotations ; harvest existing highlights → notes (no dups)
-      "C-c o" #'marginalia-notes-for-page)         ; this page's note(s) → bottom split
+      :prefix ("C-c m" . "marginalia")
+      "s" #'marginalia-source-here                 ; open/create the SOURCE parent (title = selection)
+      "c" #'marginalia-capture-pdf                 ; capture: note + highlight, open it to annotate
+      "h" #'marginalia-highlight-pdf               ; highlight: note + mark, DON'T open (keep reading)
+      "a" #'marginalia-capture-pdf-annotations     ; harvest existing highlight annotations → notes
+      "p" #'marginalia-notes-for-page)             ; this page's note(s) → bottom split
+(map! :after pdf-tools :map pdf-view-mode-map
+      "M-i" #'marginalia-capture-pdf)              ; single-chord capture alias
 
-;; From a marginalia note (parent or child), open its source PDF at the note's page.
-;; The note stores no path — this resolves the book by content hash — so it's the ONLY
-;; way back to the paper; give it a key on the org side mirroring the pdf-side C-c n/i/I.
-;; (Errors gracefully in non-marginalia org buffers.)
+;; Note-side (parent/child buffers are org): open the source PDF (resolved by content hash —
+;; the note stores no path), or delete this note + its highlight.
 (map! :after org
       :map org-mode-map
-      "C-c o" #'marginalia-open-source)
+      :prefix ("C-c m" . "marginalia")
+      "o" #'marginalia-open-source                 ; open the source PDF at the note's page
+      "d" #'marginalia-delete-note)                ; delete this note AND its highlight
 
 ;; ── cascade export (Org → typographic CSS/Typst/LaTeX/EPUB via the `cascade' CLI) ──
 ;; `cascade' comes from home.packages (its own flake, wrapping typst/tectonic/pandoc; it
@@ -705,6 +710,40 @@ not this command's job). Re-fingerprints the book after removing the highlight."
 (defun cascade-export-epub ()
   "Export this Org buffer to EPUB via cascade."
   (interactive) (cascade-export--run "epub"))
+
+(defun cascade-build-here ()
+  "Emit cascade's raw assets for the CURRENT file's medium into its directory, for
+hand-authoring (as opposed to Org `export').  `.html'/`.htm' → cascade.css (link it and
+scope content with class=\"cascade\"); `.tex' → cascade.sty (`\\usepackage{cascade}'); `.typ'
+→ no files needed — offers to insert the `@local/cascade' import (the package is already
+installed via typst.nix)."
+  (interactive)
+  (unless (buffer-file-name) (user-error "Not visiting a file"))
+  (let ((ext (downcase (or (file-name-extension (buffer-file-name)) "")))
+        (dir (file-name-directory (buffer-file-name))))
+    (pcase ext
+      ("typ"
+       (if (y-or-n-p "Typst uses the @local/cascade package — insert the import at point? ")
+           (insert "#import \"@local/cascade:0.1.0\": cascade\n#show: cascade\n")
+         (message "In your .typ:  #import \"@local/cascade:0.1.0\": cascade   +   #show: cascade")))
+      ((or "html" "htm" "tex")
+       (unless (executable-find "cascade")
+         (user-error "`cascade' not on PATH — rebuild first"))
+       (let ((target (if (equal ext "tex") "latex" "css"))
+             (default-directory dir)
+             (compilation-buffer-name-function (lambda (&rest _) "*cascade build*")))
+         (compile (format "cascade build --target %s --out ." target))))
+      (_ (user-error "No cascade target for .%s (want html / tex / typ)" ext)))))
+
+;; cascade under `C-c c' (first letter of the tool, paralleling `C-c m' for marginalia).
+;; Global — the exports need an Org buffer (they check), while `b' (build assets to author
+;; with) works in .html/.tex/.typ buffers.
+(map! :prefix ("C-c c" . "cascade")
+      "h" #'cascade-export-html
+      "t" #'cascade-export-typst
+      "l" #'cascade-export-latex
+      "p" #'cascade-export-epub
+      "b" #'cascade-build-here)
 
 ;; ── Org appearance ───────────────────────────────────────────────────────────
 ;; org-modern (minad — same lineage as the vertico/corfu stack here): pill-styled
