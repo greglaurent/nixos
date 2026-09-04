@@ -4,6 +4,7 @@
   home.packages = with pkgs; [
     gh
     just
+    jq
     gnumake
     glances
     wget
