@@ -15,7 +15,7 @@
 # fails on a "would be clobbered" collision again.
 { config, ... }:
 let
-  cascade = "${config.xdg.userDirs.extraConfig.PROJECTS}/cascade-typeset/cascade-typst";
+  cascade = "${config.xdg.userDirs.extraConfig.PROJECTS}/cascade-typography-v2/cascade-typst";
 in
 {
   xdg.dataFile."typst/packages/local/cascade/0.1.0" = {

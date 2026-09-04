@@ -26,5 +26,6 @@ in {
   home.packages = with pkgs; [
     claude-code
     rtk           # Rust Token Killer: compresses CLI output before it hits the agent's context
+    cascade       # Org → CSS/Typst/LaTeX/EPUB typographic export (from the cascade flake)
   ];
 }

@@ -673,6 +673,39 @@ not this command's job). Re-fingerprints the book after removing the highlight."
       :map org-mode-map
       "C-c o" #'marginalia-open-source)
 
+;; ── cascade export (Org → typographic CSS/Typst/LaTeX/EPUB via the `cascade' CLI) ──
+;; `cascade' comes from home.packages (its own flake, wrapping typst/tectonic/pandoc; it
+;; uses your ambient emacs — which carries ox-typst — for Org export). Each command exports
+;; the CURRENT .org buffer to one backend, into a
+;; `cascade-dist/' folder beside the file, in a compilation buffer so errors/timeouts show.
+;; marginalia can reuse `cascade-export--run' to render a note/parent.
+(defun cascade-export--run (target)
+  "Export the current .org buffer through cascade to TARGET (html/typst/latex/epub)."
+  (unless (and (buffer-file-name) (string-suffix-p ".org" (buffer-file-name) t))
+    (user-error "Not visiting a .org file"))
+  (unless (executable-find "cascade")
+    (user-error "`cascade' not on PATH — rebuild after adding the cascade flake input"))
+  (save-buffer)
+  (let* ((file (buffer-file-name))
+         (out  (expand-file-name "cascade-dist" (file-name-directory file)))
+         (default-directory (file-name-directory file))
+         (compilation-buffer-name-function (lambda (&rest _) "*cascade export*")))
+    (compile (format "cascade export %s --target %s --out %s"
+                     (shell-quote-argument file) target (shell-quote-argument out)))))
+
+(defun cascade-export-html ()
+  "Export this Org buffer to styled HTML via cascade."
+  (interactive) (cascade-export--run "html"))
+(defun cascade-export-typst ()
+  "Export this Org buffer to a Typst PDF via cascade."
+  (interactive) (cascade-export--run "typst"))
+(defun cascade-export-latex ()
+  "Export this Org buffer to a LaTeX PDF via cascade."
+  (interactive) (cascade-export--run "latex"))
+(defun cascade-export-epub ()
+  "Export this Org buffer to EPUB via cascade."
+  (interactive) (cascade-export--run "epub"))
+
 ;; ── Org appearance ───────────────────────────────────────────────────────────
 ;; org-modern (minad — same lineage as the vertico/corfu stack here): pill-styled
 ;; TODO keywords/tags, modern bullets, tables, timestamps and #+begin/end blocks.

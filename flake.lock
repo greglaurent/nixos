@@ -1,5 +1,25 @@
 {
   "nodes": {
+    "cascade": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788490858,
+        "narHash": "sha256-7p1ys1gTDv0/KwBJuhEcfAwL/XZ+khYgY5qFUdKoLX8=",
+        "ref": "refs/heads/main",
+        "rev": "2fd6e9a5012f9955b697b8d5e4fde3b4c7acf5cd",
+        "revCount": 52,
+        "type": "git",
+        "url": "ssh://git@github.com/greglaurent/cascade-typography"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/greglaurent/cascade-typography"
+      }
+    },
     "claude-desktop": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -294,6 +314,7 @@
     },
     "root": {
       "inputs": {
+        "cascade": "cascade",
         "claude-desktop": "claude-desktop",
         "dms": "dms",
         "doom-emacs": "doom-emacs",

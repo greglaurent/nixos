@@ -20,9 +20,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     claude-desktop.url = "github:aaddrick/claude-desktop-debian";
+
+    # cascade typography (private): ships its own flake exposing the `cascade' CLI
+    # (packaging + emacs/typst/tectonic/pandoc runtime deps live in that repo). git+ssh
+    # uses greg's SSH key; re-lock (`nix flake update cascade`) + rebuild to pick up
+    # pushed changes.
+    cascade = {
+      url = "git+ssh://git@github.com/greglaurent/cascade-typography";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, ... }:
+  outputs = { nixpkgs, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, cascade, ... }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
@@ -32,6 +41,7 @@
       claude-desktop = claude-desktop.packages.${system}.claude-desktop-fhs;
       obsbot-camera-control = final.callPackage ./pkgs/obsbot-camera-control { };
       rustdesk-bin = final.callPackage ./pkgs/rustdesk-bin { };   # official 1.4.9 binary, patched for NixOS
+      cascade = cascade.packages.${system}.default;               # Org→CSS/Typst/LaTeX/EPUB CLI (own flake)
     };
 
     mkHost = host: nixpkgs.lib.nixosSystem {
