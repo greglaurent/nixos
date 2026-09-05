@@ -33,6 +33,6 @@ in {
   # Local Typst libraries → Typst's @local namespace, editable in place. press lives in the
   # typst-libs repo; cascade's generated Typst package (dist/typst) lives in the cascade repo,
   # linked by cascade's own flake module.
-  myTypstLibsDir = "${config.home.homeDirectory}/Documents/typst-libs";
+  myTypstLibsDir = "${config.home.homeDirectory}/Workspace/typst-libs";
   myCascadeDir    = "${config.home.homeDirectory}/Workspace/cascade-typography-v2";
 }
