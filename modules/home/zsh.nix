@@ -44,6 +44,27 @@
       # themes, so suggestions look "missing". Use a readable mid-grey. Read
       # lazily by the plugin at display time, so setting it here is fine.
       ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=245"
+
+      # ── agenix secret helpers ──────────────────────────────────────────────
+      # Wrap the esoteric flags (secrets dir + admin identity + .age suffix) so the
+      # everyday ops are one word + a name. `agenix` is installed via
+      # modules/nixos/secrets.nix; the admin identity is ~/.config/agenix/identity.txt.
+      # Discover them with `nix-secret-<TAB>`.
+      nix-secret-list() { ls ${config.myFlakeRoot}/secrets/*.age; }
+
+      nix-secret-edit() {   # nix-secret-edit <name>   create/rotate secrets/<name>.age
+        [[ -z "$1" ]] && { echo "usage: nix-secret-edit <name>   (name without .age)"; return 1; }
+        ( cd ${config.myFlakeRoot}/secrets && agenix -e "$1.age" -i "$HOME/.config/agenix/identity.txt" )
+      }
+
+      nix-secret-add() {    # nix-secret-add <name> <keyfile>   encrypt an existing file as secrets/<name>.age
+        [[ -z "$2" ]] && { echo "usage: nix-secret-add <name> <path-to-file>   (declare recipients in secrets.nix first)"; return 1; }
+        ( cd ${config.myFlakeRoot}/secrets && EDITOR="cp $2" agenix -e "$1.age" -i "$HOME/.config/agenix/identity.txt" )
+      }
+
+      nix-secret-rekey() {  # re-encrypt every secret to the current recipients (after adding a host)
+        ( cd ${config.myFlakeRoot}/secrets && agenix -r -i "$HOME/.config/agenix/identity.txt" )
+      }
     '';
   };
 
