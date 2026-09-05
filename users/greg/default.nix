@@ -19,6 +19,7 @@ in {
     ../../modules/home/zsh.nix
     ./ssh.nix
     ./git.nix
+    ./agenix.nix                     # warn (at activation) if the master identity is missing
     ./hosts/${host}.nix
     typst-libs.homeModules.default   # symlink typst-libs packages (press) into Typst's @local
     cascade.homeModules.default      # symlink cascade's generated dist/typst into @local
