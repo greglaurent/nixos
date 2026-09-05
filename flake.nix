@@ -21,6 +21,13 @@
     };
     claude-desktop.url = "github:aaddrick/claude-desktop-debian";
 
+    # agenix: age-encrypted secrets, decrypted at activation with each host's SSH
+    # host key. Recipients in ./secrets/secrets.nix; module wired in modules/nixos/secrets.nix.
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # cascade typography (private): ships its own flake exposing the `cascade' CLI
     # (packaging + emacs/typst/tectonic/pandoc runtime deps live in that repo). git+ssh
     # uses greg's SSH key; re-lock (`nix flake update cascade`) + rebuild to pick up
@@ -38,7 +45,7 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, cascade, typst-libs, ... }:
+  outputs = { nixpkgs, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, agenix, cascade, typst-libs, ... }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
@@ -53,7 +60,7 @@
 
     mkHost = host: nixpkgs.lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit home-manager dms doom-emacs nixos-hardware typst-libs cascade; };
+      specialArgs = { inherit home-manager dms doom-emacs nixos-hardware typst-libs cascade agenix; };
       modules = [
         { nixpkgs.overlays = [ flakePkgs ]; }
         ./hosts/${host}

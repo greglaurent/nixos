@@ -7,7 +7,7 @@
     settings = {
       "github.com" = {
         User = "git";
-        IdentityFile = "~/.ssh/gh_personal";
+        IdentityFile = "/run/agenix/gh_personal";
         IdentitiesOnly = true;
       };
 
@@ -16,7 +16,7 @@
       # won't offer it → publickey failure. Log in as greg by default.
       "plateau plateau.local rhizome rhizome.local" = {
         User = "greg";
-        IdentityFile = "~/.ssh/gh_personal";
+        IdentityFile = "/run/agenix/gh_personal";
         IdentitiesOnly = true;
       };
 
@@ -26,7 +26,7 @@
       # is needed.
       "git-ssh.abmac.io" = {
         User = "git";
-        IdentityFile = "~/.ssh/gh_personal";
+        IdentityFile = "/run/agenix/gh_personal";
         IdentitiesOnly = true;
         ProxyCommand = "cloudflared access ssh --hostname %h";
       };
