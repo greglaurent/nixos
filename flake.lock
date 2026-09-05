@@ -7,11 +7,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788490858,
-        "narHash": "sha256-7p1ys1gTDv0/KwBJuhEcfAwL/XZ+khYgY5qFUdKoLX8=",
+        "lastModified": 1788584974,
+        "narHash": "sha256-M4ZEFhFW37tZn7C0ZW6KesBtO0GItbO7NtSUn9EefL8=",
         "ref": "refs/heads/main",
-        "rev": "2fd6e9a5012f9955b697b8d5e4fde3b4c7acf5cd",
-        "revCount": 52,
+        "rev": "31ffe905d07195e64199cb7304ab1a8578fe8368",
+        "revCount": 53,
         "type": "git",
         "url": "ssh://git@github.com/greglaurent/cascade-typography"
       },
@@ -321,6 +321,7 @@
         "home-manager": "home-manager",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_3",
+        "typst-libs": "typst-libs",
         "zen-browser": "zen-browser"
       }
     },
@@ -337,6 +338,26 @@
         "owner": "nix-systems",
         "repo": "default",
         "type": "github"
+      }
+    },
+    "typst-libs": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788584819,
+        "narHash": "sha256-avWSzqFq7zh+ffsyIxvXC88u5Oc3M8R+cG5sC22Djco=",
+        "ref": "refs/heads/master",
+        "rev": "44b85898559450b9d5e459dc845b6203092cb25d",
+        "revCount": 6,
+        "type": "git",
+        "url": "ssh://git@github.com/greglaurent/typst-libs"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/greglaurent/typst-libs"
       }
     },
     "zen-browser": {

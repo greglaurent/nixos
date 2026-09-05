@@ -1,4 +1,4 @@
-{ config, pkgs, lib, doom-emacs, ... }:
+{ config, pkgs, lib, doom-emacs, typst-libs, cascade, ... }:
 {
   nixpkgs.config.allowUnfree = true;
 
@@ -104,6 +104,6 @@
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
-    extraSpecialArgs = { inherit doom-emacs; };
+    extraSpecialArgs = { inherit doom-emacs typst-libs cascade; };
   };
 }

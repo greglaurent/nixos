@@ -29,9 +29,16 @@
       url = "git+ssh://git@github.com/greglaurent/cascade-typography";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # local Typst libraries (press, …): a flake whose home-manager module symlinks each
+    # package into Typst's @local namespace, editable in place. git+ssh, private.
+    typst-libs = {
+      url = "git+ssh://git@github.com/greglaurent/typst-libs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, cascade, ... }:
+  outputs = { nixpkgs, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, cascade, typst-libs, ... }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
@@ -46,7 +53,7 @@
 
     mkHost = host: nixpkgs.lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit home-manager dms doom-emacs nixos-hardware; };
+      specialArgs = { inherit home-manager dms doom-emacs nixos-hardware typst-libs cascade; };
       modules = [
         { nixpkgs.overlays = [ flakePkgs ]; }
         ./hosts/${host}
