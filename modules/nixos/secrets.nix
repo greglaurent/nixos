@@ -1,9 +1,14 @@
 # agenix: decrypt secrets/*.age at activation using this host's SSH host key
 # (age.identityPaths defaults to /etc/ssh/ssh_host_ed25519_key), then place them
 # where consumers expect. Recipients are declared in ../../secrets/secrets.nix.
-{ agenix, ... }:
+{ agenix, pkgs, ... }:
 {
   imports = [ agenix.nixosModules.default ];
+
+  # The agenix CLI (`agenix -e` / `-r`) for editing & rekeying secrets. The
+  # nixosModule above only DECRYPTS at activation; the editing tool is a
+  # separate package, so install it explicitly.
+  environment.systemPackages = [ agenix.packages.${pkgs.system}.default ];
 
   # greg's GitHub / LAN / Forgejo SSH key. Lands at the default /run/agenix/gh_personal
   # (tmpfs — plaintext never persists to disk), owned by greg; users/greg/ssh.nix
