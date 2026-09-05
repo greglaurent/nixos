@@ -13,13 +13,13 @@ in {
     ../../modules/home/rustdesk.nix
     ../../modules/home/podman.nix
     ../../modules/home/packages.nix
+    ../../modules/home/agenix.nix    # opt in: warn (at activation) if the master identity is missing
     ./emacs.nix
     ../../modules/home/xdg.nix
     ./xdg.nix                      # greg's overrides of the xdg defaults
     ../../modules/home/zsh.nix
     ./ssh.nix
     ./git.nix
-    ./agenix.nix                     # warn (at activation) if the master identity is missing
     ./hosts/${host}.nix
     typst-libs.homeModules.default   # symlink typst-libs packages (press) into Typst's @local
     cascade.homeModules.default      # symlink cascade's generated dist/typst into @local
