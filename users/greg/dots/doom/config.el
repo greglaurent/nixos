@@ -106,6 +106,23 @@
   ;; auto-updates on every save.
   (setq typst-ts-preview-function #'find-file-other-window))
 
+;; typst-ts-compile/typst-ts-watch-mode (the package's own C-c C-c / C-c C-w
+;; commands) run `typst compile'/`watch' from the buffer's own directory with
+;; no --root, so any project where imports reach above the file's directory
+;; (press's examples/{base,cascade} share files via ../) fails with "source
+;; file must be contained in project root". Point them at the nearest
+;; enclosing git repo instead, via the options vars they already splice onto
+;; the command line — falls back to the file's own directory outside a repo.
+(defun typst-ts-set-root-options ()
+  "Set this buffer's typst-ts-mode compile/watch options to --root the git repo."
+  (when buffer-file-name
+    (let ((root (expand-file-name
+                 (or (locate-dominating-file buffer-file-name ".git")
+                     (file-name-directory buffer-file-name)))))
+      (setq-local typst-ts-compile-options (format "--root %s" (shell-quote-argument root)))
+      (setq-local typst-ts-watch-options (list "--root" root)))))
+(add-hook 'typst-ts-mode-hook #'typst-ts-set-root-options)
+
 (defun typst-pdf-revert-visible ()
   "After saving a .typ file, revert every visible pdf-view buffer."
   (when (and buffer-file-name
