@@ -22,7 +22,7 @@ in {
     ./git.nix
     ./hosts/${host}.nix
     typst-libs.homeModules.default   # symlink typst-libs packages (press) into Typst's @local
-    cascade.homeModules.default      # symlink cascade's generated dist/typst into @local
+    cascade.homeModules.default      # @local/cascade from the flake's built typst-assets + font provisioning
     ./typst-workspaces.nix           # dir source-of-truth + clone-if-missing bootstrap for both
   ];
 
