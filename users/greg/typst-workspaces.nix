@@ -1,27 +1,26 @@
 # Live @local Typst checkouts: where they live, and a clone-if-missing bootstrap.
 #
-# The typst-libs / cascade home modules create mkOutOfStoreSymlinks from Typst's
-# @local namespace to these working trees, so edits are picked up in place. nix
-# owns the symlinks and these dir options, but it CANNOT generate the mutable
-# working trees themselves — on a fresh machine the symlink targets would dangle.
-# This module closes that chicken-egg: clone each tree once, only if missing.
+# The typst-libs home module creates an mkOutOfStoreSymlink from Typst's @local
+# namespace to its live checkout, so edits are picked up in place. cascade's @local
+# comes from its flake (a store path), so its checkout is DEV-ONLY. nix can't
+# generate these mutable working trees, so this module clones each once, if missing.
 #
 # Secrets stay out of scope: the clone uses your SSH key over the github.com
 # block from ssh.nix. Seed ~/.ssh/gh_personal first (sops/agenix can automate
 # that later); until then the clone just warns and skips — it never aborts.
 { config, pkgs, lib, ... }:
 let
-  # Source of truth for both the symlink targets (consumed by the typst-libs /
-  # cascade home modules) and the clone bootstrap below. URLs match the flake
-  # inputs (cascade's repo is `cascade-typography`; its folder keeps the -v2 name).
+  # typst-libs' symlink target is a home-manager option (myTypstLibsDir). cascade's checkout is
+  # DEV-ONLY now (its @local comes from the flake), so it's just a local path here — no option.
+  # URLs match the flake inputs (cascade's repo is `cascade-typography`; its folder keeps the -v2 name).
+  cascadeDir = "${config.home.homeDirectory}/Workspace/cascade-typography-v2";
   workspaces = [
     { dir = config.myTypstLibsDir; url = "git@github.com:greglaurent/typst-libs.git"; }
-    { dir = config.myCascadeDir;   url = "git@github.com:greglaurent/cascade-typography.git"; }
+    { dir = cascadeDir;            url = "git@github.com:greglaurent/cascade-typography.git"; }
   ];
 in
 {
   myTypstLibsDir = "${config.home.homeDirectory}/Workspace/typst-libs";
-  myCascadeDir   = "${config.home.homeDirectory}/Workspace/cascade-typography-v2";
 
   # Idempotent (skips existing trees) and NON-FATAL — a missing key or network
   # only warns, so it can never wedge `nixos-rebuild` / `home-manager switch`.
