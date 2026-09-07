@@ -1,7 +1,7 @@
-{ config, lib, pkgs, dms, ... }:
+{ config, lib, pkgs, dms, dank-greeter, ... }:
 {
   imports = [
-    dms.nixosModules.greeter
+    dank-greeter.nixosModules.default
   ];
 
   config = lib.mkIf (config.myDesktop.environment == "niri") {
@@ -27,7 +27,7 @@
       pavucontrol
     ];
 
-    programs.dank-material-shell.greeter = {
+    programs.dms-greeter = {
       enable = true;
       compositor.name = "niri";
     };

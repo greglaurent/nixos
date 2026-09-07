@@ -11,6 +11,12 @@
       url = "github:AvengeMedia/DankMaterialShell/stable";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Greeter split out of DankMaterialShell into its own flake; see
+    # https://github.com/AvengeMedia/dank-greeter. Provides `programs.dms-greeter`.
+    dank-greeter = {
+      url = "github:AvengeMedia/dank-greeter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     doom-emacs = {
       url = "github:marienz/nix-doom-emacs-unstraightened";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -45,7 +51,7 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, dms, doom-emacs, nixos-hardware, zen-browser, claude-desktop, agenix, cascade, typst-libs, ... }:
+  outputs = { nixpkgs, home-manager, dms, dank-greeter, doom-emacs, nixos-hardware, zen-browser, claude-desktop, agenix, cascade, typst-libs, ... }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
@@ -60,7 +66,7 @@
 
     mkHost = host: nixpkgs.lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit home-manager dms doom-emacs nixos-hardware typst-libs cascade agenix; };
+      specialArgs = { inherit home-manager dms dank-greeter doom-emacs nixos-hardware typst-libs cascade agenix; };
       modules = [
         { nixpkgs.overlays = [ flakePkgs ]; }
         ./hosts/${host}
