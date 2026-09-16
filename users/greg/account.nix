@@ -16,5 +16,9 @@
   # SSH login keys (sshd is enabled + hardened to key-only in modules/nixos/system.nix).
   openssh.authorizedKeys.keys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILCKYK7X2lRe3AhbpmtzeRGIrwOrd2a7OQ9psxC1mzGa gregory.m.laurent@gmail.com"
+    # gh_personal (agenix-managed, decrypted to /run/agenix/gh_personal): ssh.nix
+    # forces IdentitiesOnly on this key for the plateau/rhizome LAN host block, so
+    # it must be trusted here too or LAN ssh between machines fails outright.
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEWrTJfQWvbLFDgROFTif57HVoVqZ7OiiFPaBEWxQZSP gregory.m.laurent@gmail.com"
   ];
 }
