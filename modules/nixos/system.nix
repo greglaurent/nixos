@@ -75,7 +75,13 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-  environment.systemPackages = with pkgs; [ zsh git neovim ];
+  environment.systemPackages = with pkgs; [
+    zsh
+    git
+    neovim
+    dmidecode   # hardware/BIOS info (Vendor/Version/Release Date) — pairs with fwupd above
+    lshw        # detailed hardware listing (CPU, etc.)
+  ];
   programs.git.enable = true;
   programs.zsh.enable = true;
 
