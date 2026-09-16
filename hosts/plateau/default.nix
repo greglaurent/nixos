@@ -1,4 +1,4 @@
-{ nixos-hardware, home-manager, ... }:
+{ nixos-hardware, home-manager, pkgs, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -16,6 +16,27 @@
   # dongle (enp8s0u2u4u5) is intentionally excluded — USB NICs can't reliably
   # wake from S3/S5. Requires "Wake on LAN" enabled and ErP/EuP disabled in BIOS.
   networking.interfaces.enp74s0.wakeOnLan.enable = true;
+
+  # Running WiFi (wlp73s0) and this wired NIC active simultaneously on the same
+  # subnet caused a real outage: the router/switch's ARP/MAC-learning table
+  # flapped between plateau's two interfaces, making plateau unreachable from
+  # OTHER LAN devices (SSH from rhizome, LocalSend) even though plateau's own
+  # network stack looked completely healthy the whole time. `nmcli radio wifi
+  # off` fixed it manually; do it automatically whenever the wired link comes
+  # up, and restore WiFi if it drops so the desktop isn't stranded if
+  # unplugged. NetworkManager dispatcher scripts get called as "$1 $2" =
+  # interface + action (up/down).
+  networking.networkmanager.dispatcherScripts = [
+    {
+      type = "basic";
+      source = pkgs.writeShellScript "wifi-ethernet-exclusivity" ''
+        case "$1:$2" in
+          enp74s0:up)   ${pkgs.networkmanager}/bin/nmcli radio wifi off ;;
+          enp74s0:down) ${pkgs.networkmanager}/bin/nmcli radio wifi on  ;;
+        esac
+      '';
+    }
+  ];
 
   # Hibernation target: the LUKS swap mapper already declared in
   # hardware-configuration.nix and unlocked by initrd below, so there is no
