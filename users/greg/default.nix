@@ -28,7 +28,8 @@ in {
 
   home.packages = with pkgs; [
     claude-code
-    rtk           # Rust Token Killer: compresses CLI output before it hits the agent's context
-    pkgs.cascade  # Org → CSS/Typst/LaTeX/EPUB typographic export (explicit: bare `cascade` is the flake-input arg)
+    rtk                 # Rust Token Killer: compresses CLI output before it hits the agent's context
+    pkgs.cascade        # Org → CSS/Typst/LaTeX/EPUB typographic export (explicit: bare `cascade` is the flake-input arg)
+    pkgs.rename-books   # heuristic PDF/EPUB → "Author - Title (Year)" renamer
   ];
 }
