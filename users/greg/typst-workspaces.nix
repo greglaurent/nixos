@@ -12,8 +12,8 @@
 let
   # typst-libs' symlink target is a home-manager option (myTypstLibsDir). cascade's checkout is
   # DEV-ONLY now (its @local comes from the flake), so it's just a local path here — no option.
-  # URLs match the flake inputs (cascade's repo is `cascade-typography`; its folder keeps the -v2 name).
-  cascadeDir = "${config.home.homeDirectory}/Workspace/cascade-typography-v2";
+  # URLs match the flake inputs (cascade's repo is `cascade-typography`; folder name matches).
+  cascadeDir = "${config.home.homeDirectory}/Workspace/cascade-typography";
   workspaces = [
     { dir = config.myTypstLibsDir; url = "git@github.com:greglaurent/typst-libs.git"; }
     { dir = cascadeDir;            url = "git@github.com:greglaurent/cascade-typography.git"; }
