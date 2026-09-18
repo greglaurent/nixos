@@ -82,5 +82,6 @@
     # ── AI ──
     pkgs.claude-code
     pkgs.claude-desktop      # flake overlay; FHS variant = MCP/Cowork
+    pkgs.codex                # OpenAI Codex CLI — nixpkgs proper, no overlay needed
   ];
 }

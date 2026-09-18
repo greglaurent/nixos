@@ -1,6 +1,12 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    # Fast-moving CLI tools (codex ships near-daily) outrun the stable branch's
+    # infrequent backports. Pull just those packages from here via the
+    # `flakePkgs` overlay below rather than switching the whole system to
+    # unstable — self-updating on `nix flake update nixpkgs-unstable`, no
+    # manual version/hash bumping the way pkgs/rustdesk-bin needs.
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     home-manager = {
@@ -51,10 +57,11 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, dms, dank-greeter, doom-emacs, nixos-hardware, zen-browser, claude-desktop, agenix, cascade, typst-libs, ... }:
+  outputs = { nixpkgs, nixpkgs-unstable, home-manager, dms, dank-greeter, doom-emacs, nixos-hardware, zen-browser, claude-desktop, agenix, cascade, typst-libs, ... }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
+    pkgsUnstable = import nixpkgs-unstable { inherit system; config.allowUnfree = true; };
     hosts = [ "rhizome" "plateau" ];
     flakePkgs = final: prev: {
       zen-browser = zen-browser.packages.${system}.default;
@@ -62,6 +69,7 @@
       obsbot-camera-control = final.callPackage ./pkgs/obsbot-camera-control { };
       rustdesk-bin = final.callPackage ./pkgs/rustdesk-bin { };   # official 1.4.9 binary, patched for NixOS
       cascade = cascade.packages.${system}.default;               # Org→CSS/Typst/LaTeX/EPUB CLI (own flake)
+      codex = pkgsUnstable.codex;                                  # ships near-daily; stable branch lags too far behind
     };
 
     mkHost = host: nixpkgs.lib.nixosSystem {
