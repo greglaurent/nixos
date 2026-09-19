@@ -1,4 +1,11 @@
-{ config, ... }:
+{ config, lib, pkgs, ... }:
+let
+  secretDir = lib.escapeShellArg "${config.myFlakeRoot}/secrets";
+  identity = lib.escapeShellArg config.myAgenix.identityPath;
+  secretImportEditor = pkgs.writeShellScript "agenix-import-editor" ''
+    exec ${pkgs.coreutils}/bin/cp -- "$AGENIX_IMPORT_SOURCE" "$1"
+  '';
+in
 {
   programs.zsh = {
     enable = true;
@@ -29,7 +36,7 @@
       # a flake config — --upgrade above only touches channels. --flake targets the
       # root regardless of cwd; the lock write is unprivileged (only the switch sudos).
       nix-rbs-update = "nix flake update --flake ${config.myFlakeRoot} && ${nix-rbs}";
-      vim = "neovim";
+      vim = "nvim";
       ec = "emacsclient -c -a ''";
       et = "emacsclient -t -a ''";
     };
@@ -48,22 +55,25 @@
       # ── agenix secret helpers ──────────────────────────────────────────────
       # Wrap the esoteric flags (secrets dir + admin identity + .age suffix) so the
       # everyday ops are one word + a name. `agenix` is installed via
-      # modules/nixos/secrets.nix; the admin identity is ~/.config/agenix/identity.txt.
+      # modules/nixos/secrets.nix; myAgenix.identityPath selects the admin identity.
       # Discover them with `nix-secret-<TAB>`.
-      nix-secret-list() { ls ${config.myFlakeRoot}/secrets/*.age; }
+      nix-secret-list() { ls ${secretDir}/*.age; }
 
       nix-secret-edit() {   # nix-secret-edit <name>   create/rotate secrets/<name>.age
         [[ -z "$1" ]] && { echo "usage: nix-secret-edit <name>   (name without .age)"; return 1; }
-        ( cd ${config.myFlakeRoot}/secrets && agenix -e "$1.age" -i "$HOME/.config/agenix/identity.txt" )
+        ( cd ${secretDir} && agenix -e "$1.age" -i ${identity} )
       }
 
       nix-secret-add() {    # nix-secret-add <name> <keyfile>   encrypt an existing file as secrets/<name>.age
         [[ -z "$2" ]] && { echo "usage: nix-secret-add <name> <path-to-file>   (declare recipients in secrets.nix first)"; return 1; }
-        ( cd ${config.myFlakeRoot}/secrets && EDITOR="cp $2" agenix -e "$1.age" -i "$HOME/.config/agenix/identity.txt" )
+        local source
+        source=$(${pkgs.coreutils}/bin/realpath -e -- "$2") || return
+        [[ -f "$source" ]] || { echo "Not a regular file: $2" >&2; return 1; }
+        ( cd ${secretDir} && AGENIX_IMPORT_SOURCE="$source" EDITOR=${secretImportEditor} agenix -e "$1.age" -i ${identity} )
       }
 
       nix-secret-rekey() {  # re-encrypt every secret to the current recipients (after adding a host)
-        ( cd ${config.myFlakeRoot}/secrets && agenix -r -i "$HOME/.config/agenix/identity.txt" )
+        ( cd ${secretDir} && agenix -r -i ${identity} )
       }
     '';
   };

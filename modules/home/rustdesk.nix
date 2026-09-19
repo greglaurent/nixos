@@ -1,6 +1,5 @@
 # RustDesk (remote desktop), NATIVE — run directly on the host, the same way it
-# works on Arch (Flutter build = nixpkgs rustdesk-flutter, matching Arch's
-# rustdesk-bin). On niri it captures through the plain ScreenCast portal (approve
+# works on Arch (official Flutter binary, packaged by our rustdesk-bin overlay). On niri it captures through the plain ScreenCast portal (approve
 # the source picker once per connection) and injects input via /dev/uinput
 # (enabled by modules/nixos/rustdesk.nix).
 #

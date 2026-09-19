@@ -349,6 +349,23 @@ current file. No-op if the hash is unchanged."
 (defvar-local marginalia--parent nil
   "Plist (:id :file :dir :title) of this PDF's source parent, set by `marginalia-source-here'.")
 
+(defvar-local marginalia--saved-parent nil
+  "Parent to re-fingerprint after a successful PDF save.")
+
+(defun marginalia--before-pdf-save ()
+  "Find the parent while the on-disk PDF still has its previous hash."
+  (setq marginalia--saved-parent
+        (or (plist-get marginalia--parent :file)
+            (and buffer-file-name
+                 (require 'org-roam nil t)
+                 (marginalia--parent-for-pdf buffer-file-name)))))
+
+(defun marginalia--after-pdf-save ()
+  "Keep tracked document identity current after any successful PDF save."
+  (when marginalia--saved-parent
+    (marginalia--refingerprint buffer-file-name marginalia--saved-parent)
+    (setq marginalia--saved-parent nil)))
+
 (defun marginalia--show-reading-layout (pfile)
   "Lay the current window out as PDF | parent-note (PFILE); cursor stays in the PDF."
   (delete-other-windows)
@@ -479,7 +496,6 @@ stay in the PDF."
     (unless quote
       (user-error "No PDF text selected — drag across the text first"))
     (let* ((page  (pdf-view-current-page))
-           (pfile (plist-get marginalia--parent :file))
            (res   (marginalia--new-child quote page))       ; (ID . FILE); don't open here
            (id    (car res))
            (file  (cdr res))
@@ -490,7 +506,6 @@ stay in the PDF."
               (pdf-annot-add-highlight-markup-annotation
                region nil `((contents . ,(marginalia--gist quote)) (label . ,id)))
               (save-buffer)                                  ; persist the highlight into the PDF
-              (marginalia--refingerprint (buffer-file-name) pfile)  ; bytes changed → re-id
               (setq marked t))
           (error (message "marginalia: highlight not saved (%s) — note kept"
                           (error-message-string err)))))
@@ -552,8 +567,7 @@ Current page by default; with a prefix arg (C-u), the whole document."
                 (pdf-annot-put a 'contents (marginalia--gist text)))  ; readable tooltip
               (setq n (1+ n)))))))
     (when (> n 0)
-      (save-buffer)                                          ; persist the new labels/contents
-      (marginalia--refingerprint (buffer-file-name) (plist-get marginalia--parent :file)))
+      (save-buffer))                                         ; save hook updates document identity
     (message "Harvested %d note(s)%s" n
              (if (> skipped 0) (format ", skipped %d already-noted" skipped) ""))))
 
@@ -590,7 +604,7 @@ picker doubles as choosing which highlight). The PDF keeps focus."
                       '(display-buffer-at-bottom (window-height . 0.3))))))
 
 ;; ── deletion coupling: highlights and notes don't orphan each other ──────────────
-;; A highlight's `contents' holds its child note's :ID:. Deleting a NOTE
+;; A highlight's `label' holds its child note's :ID:. Deleting a NOTE
 ;; (`marginalia-delete-note') removes its highlight too (the highlight is disposable).
 ;; Deleting a HIGHLIGHT in pdf-view offers to delete its note (default no — a note holds
 ;; your explication + graph links, so never silently). Both paths re-fingerprint.
@@ -609,10 +623,16 @@ pdf-annot deletion hook from re-prompting for the same note.")
         (require 'org-roam)
         (let ((n (org-roam-node-from-id id))) (and n (org-roam-node-file n))))))
 
+(defun marginalia--prepare-note-deletion (file)
+  "Close FILE's buffer, aborting if the user or a buffer hook refuses."
+  (let ((buf (find-buffer-visiting file)))
+    (when (and buf (not (kill-buffer buf)))
+      (user-error "Note deletion cancelled"))))
+
 (defun marginalia--delete-note-file (file)
   "Delete note FILE: kill its buffer, remove it, deregister it from org-roam."
   (when (and file (file-exists-p file))
-    (let ((buf (find-buffer-visiting file))) (when buf (kill-buffer buf)))
+    (marginalia--prepare-note-deletion file)
     (delete-file file)
     (ignore-errors (require 'org-roam) (org-roam-db-clear-file file))
     (message "marginalia: deleted note %s" (file-name-nondirectory file))))
@@ -629,7 +649,9 @@ offer to delete its note too. Skipped during marginalia's own coordinated delete
           (marginalia--delete-note-file note))))))
 
 (defun marginalia--enable-annot-hook ()
-  (add-hook 'pdf-annot-modified-functions #'marginalia--on-annots-modified nil t))
+  (add-hook 'pdf-annot-modified-functions #'marginalia--on-annots-modified nil t)
+  (add-hook 'before-save-hook #'marginalia--before-pdf-save nil t)
+  (add-hook 'after-save-hook #'marginalia--after-pdf-save nil t))
 (add-hook 'pdf-view-mode-hook #'marginalia--enable-annot-hook)
 
 (defun marginalia--activate-handler (a)
@@ -661,6 +683,8 @@ not this command's job). Re-fingerprints the book after removing the highlight."
            (pfile (expand-file-name
                    (concat (file-name-nondirectory (directory-file-name dir)) ".org") dir))
            (pdf   (marginalia--doc-locate (marginalia--file-prop pfile "MARGINALIA_DOC_ID"))))
+      ;; Resolve buffer-close confirmation before changing either file.
+      (marginalia--prepare-note-deletion note)
       (when (and pdf (file-exists-p pdf))
         (require 'pdf-annot)
         (with-current-buffer (find-file-noselect pdf)
@@ -669,8 +693,7 @@ not this command's job). Re-fingerprints the book after removing the highlight."
             (when hits
               (let ((marginalia--deleting t))
                 (dolist (a hits) (pdf-annot-delete a))
-                (save-buffer))
-              (marginalia--refingerprint pdf pfile)))))
+                (save-buffer))))))
       (marginalia--delete-note-file note))))
 
 ;; All marginalia lives under a `C-c m' (marginalia) prefix. PDF-side commands (capture)
@@ -842,7 +865,7 @@ installed via typst.nix)."
 ;; On Nix, doom-user-dir (DOOMDIR) is a READ-ONLY /nix/store copy, so the stock
 ;; `SPC f p' / `SPC f P' (find/browse private config) open an uneditable path.
 ;; Point them at the real editable source that home-manager tangles into the
-;; store. Edit here, then `home-manager switch' to apply.
+;; store. Edit here, then `nix-rbs' to apply.
 ;;
 ;; Two writable trees, per the dots/content standard:
 ;;   • +doom-source-dir  -> dots/doom    ($DOOM_CONFIG_DIR): the reproducible .el

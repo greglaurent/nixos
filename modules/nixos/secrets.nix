@@ -8,7 +8,7 @@
   # The agenix CLI (`agenix -e` / `-r`) for editing & rekeying secrets. The
   # nixosModule above only DECRYPTS at activation; the editing tool is a
   # separate package, so install it explicitly.
-  environment.systemPackages = [ agenix.packages.${pkgs.system}.default ];
+  environment.systemPackages = [ agenix.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 
   # greg's GitHub / LAN / Forgejo SSH key. Lands at the default /run/agenix/gh_personal
   # (tmpfs — plaintext never persists to disk), owned by greg; users/greg/ssh.nix

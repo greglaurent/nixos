@@ -1,5 +1,5 @@
 # RustDesk (remote desktop) as a single opt-in feature: `myRustdesk.enable`.
-# RustDesk runs NATIVELY (nixpkgs rustdesk-flutter, see modules/home/rustdesk.nix)
+# RustDesk runs NATIVELY (official rustdesk-bin overlay, see modules/home/rustdesk.nix)
 # — the same Flutter build that works on Arch. This module provides the one
 # SYSTEM-level prerequisite the home package can't set up itself:
 #   * /dev/uinput — RustDesk injects keyboard/mouse into the niri session for

@@ -37,7 +37,7 @@
       # doomDir is the reproducible dots/doom tree, whole and unfiltered. The
       # split is topological now, so there's nothing to exclude: authored content
       # physically lives in content/doom, a different tree that is never a build
-      # input. Editing an .el here needs `home-manager switch'; editing content
+      # input. Editing an .el here needs `nix-rbs'; editing content
       # does not.
       doomDir = ./dots/doom;
       doomLocalDir = "${config.home.homeDirectory}/.local/share/nix-doom";

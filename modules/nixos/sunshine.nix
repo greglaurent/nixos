@@ -33,6 +33,8 @@ let
   # here. (Sunshine's Windows examples use %VAR%, expanded by cmd.exe at
   # runtime, which is why they don't hit this.)
   niriPrep = pkgs.writeShellScript "sunshine-niri-prep" ''
+    set -euo pipefail
+    export PATH=${lib.makeBinPath [ pkgs.coreutils ]}:$PATH
     out="$1"
     w="''${SUNSHINE_CLIENT_WIDTH:-}"
     h="''${SUNSHINE_CLIENT_HEIGHT:-}"
@@ -41,14 +43,34 @@ let
     # Validate BEFORE touching anything: a prep-cmd that fails part-way leaves
     # the display in a half-applied state, because Sunshine skips the undo when
     # the launch aborts. Numeric, because these end up in a mode string.
-    case "$w$h$fps" in
-      "" | *[!0-9]*)
+    for value in "$w" "$h" "$fps"; do
+      if [[ ! "$value" =~ ^[1-9][0-9]*$ ]]; then
         echo "sunshine-niri-prep: bad client geometry in environment: '$w' '$h' '$fps'" >&2
         exit 1
-        ;;
-    esac
+      fi
+    done
 
     cfg="''${XDG_CONFIG_HOME:-$HOME/.config}/niri/stream-output.kdl"
+    niri=${pkgs.niri}/bin/niri
+    backup=$(mktemp "$cfg.backup.XXXXXX")
+    pending=""
+    changed=false
+    cleanup() {
+      status=$?
+      trap - EXIT
+      if [ "$status" -ne 0 ] && "$changed"; then
+        mv -f -- "$backup" "$cfg"
+        "$niri" msg action load-config-file || true
+      fi
+      rm -f -- "$backup"
+      [ -z "$pending" ] || rm -f -- "$pending"
+      exit "$status"
+    }
+    trap cleanup EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    cp -- "$cfg" "$backup"
+    pending=$(mktemp "$cfg.pending.XXXXXX")
     # Both the output AND the placement rule are written here, because niri's
     # window-rule matchers (app-id, title, is-floating, at-startup, ...) have no
     # way to say "only on this output" — so a static rule forcing fullscreen
@@ -57,7 +79,7 @@ let
     #
     # No match block, so it covers games too; their app-ids are arbitrary and
     # enumerating them is a losing game.
-    cat > "$cfg" <<EOF
+    cat > "$pending" <<EOF
     // Written by sunshine-niri-prep at stream start. Do not edit.
     output "$out" {
         mode custom=true "''${w}x''${h}@''${fps}"
@@ -72,7 +94,8 @@ let
     }
     EOF
 
-    niri=${pkgs.niri}/bin/niri
+    changed=true
+    mv -f -- "$pending" "$cfg"
     "$niri" msg action load-config-file
 
     # Do NOT assume that took effect. The reload is asynchronous, and if the
@@ -106,13 +129,18 @@ let
   '';
 
   niriUndo = pkgs.writeShellScript "sunshine-niri-undo" ''
+    set -euo pipefail
+    export PATH=${lib.makeBinPath [ pkgs.coreutils ]}:$PATH
     cfg="''${XDG_CONFIG_HOME:-$HOME/.config}/niri/stream-output.kdl"
-    cat > "$cfg" <<EOF
+    pending=$(mktemp "$cfg.pending.XXXXXX")
+    trap 'rm -f -- "$pending"' EXIT
+    cat > "$pending" <<EOF
     // Written by sunshine-niri-undo at stream end. Do not edit.
     output "$1" {
         off
     }
     EOF
+    mv -f -- "$pending" "$cfg"
     ${pkgs.niri}/bin/niri msg action load-config-file
   '';
 

@@ -69,11 +69,8 @@
   # in an extracted initrd, hibernate stays console-only and WoL stays paired with
   # suspend-to-RAM, which works.
 
-  # LUKS root. REPLACE both the mapper name and the UUID with the real values
-  # from plateau (`sudo blkid` → the crypto_LUKS partition's UUID). The name
-  # after "luks-" is conventionally that same UUID.
-
-
+  # LUKS swap backing the hibernation target above. Update the mapper name
+  # and partition UUID together if this swap partition is recreated.
   boot.initrd.luks.devices."luks-a3791415-752c-4222-909e-d5e16bf8fbb7"
     .device = "/dev/disk/by-uuid/a3791415-752c-4222-909e-d5e16bf8fbb7";
 

@@ -6,8 +6,8 @@
 # generate these mutable working trees, so this module clones each once, if missing.
 #
 # Secrets stay out of scope: the clone uses your SSH key over the github.com
-# block from ssh.nix. Seed ~/.ssh/gh_personal first (sops/agenix can automate
-# that later); until then the clone just warns and skips — it never aborts.
+# block from ssh.nix. The key is decrypted to /run/agenix/gh_personal;
+# if it is unavailable the clone warns and skips.
 { config, pkgs, lib, ... }:
 let
   # typst-libs' symlink target is a home-manager option (myTypstLibsDir). cascade's checkout is
@@ -23,17 +23,17 @@ in
   myTypstLibsDir = "${config.home.homeDirectory}/Workspace/typst-libs";
 
   # Idempotent (skips existing trees) and NON-FATAL — a missing key or network
-  # only warns, so it can never wedge `nixos-rebuild` / `home-manager switch`.
-  # Runs after writeBoundary so ~/.ssh/config (github.com → gh_personal) is in place;
+  # only warns, so it can never wedge `nixos-rebuild` / `nix-rbs`.
+  # Runs after linkGeneration so ~/.ssh/config (github.com → gh_personal) is in place;
   # accept-new handles github.com's host key on a first, never-seen-before connect.
-  home.activation.cloneTypstWorkspaces = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+  home.activation.cloneTypstWorkspaces = lib.hm.dag.entryAfter [ "linkGeneration" ] (
     lib.concatMapStrings (w: ''
       if [ ! -e "${w.dir}" ]; then
         echo "typst-workspaces: cloning ${w.url} → ${w.dir}"
-        ${pkgs.git}/bin/git \
+        run ${pkgs.git}/bin/git \
           -c core.sshCommand="${pkgs.openssh}/bin/ssh -o StrictHostKeyChecking=accept-new" \
           clone "${w.url}" "${w.dir}" \
-          || echo "typst-workspaces: WARNING — clone of ${w.url} failed; seed ~/.ssh/gh_personal and re-run 'home-manager switch'"
+          || echo "typst-workspaces: WARNING — clone of ${w.url} failed; check /run/agenix/gh_personal and re-run 'nix-rbs'"
       fi
     '') workspaces
   );

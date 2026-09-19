@@ -1,4 +1,20 @@
 { config, lib, pkgs, dms, dank-greeter, ... }:
+let
+  streamSeedHeader = builtins.readFile ../../../seed/niri/stream-output.kdl;
+  streamOutput = config.mySunshine.captureOutput;
+  streamSeed = pkgs.writeText "niri-stream-output.kdl" (streamSeedHeader
+    + lib.optionalString (config.mySunshine.enable && streamOutput != null) ''
+      output ${builtins.toJSON streamOutput} {
+          off
+      }
+    '');
+  # Recognize only the exact old seed, never a file rewritten by Sunshine.
+  legacyStreamSeed = pkgs.writeText "niri-stream-output-legacy.kdl" (streamSeedHeader + ''
+    output "HDMI-A-1" {
+        off
+    }
+  '');
+in
 {
   imports = [
     dank-greeter.nixosModules.default
@@ -89,7 +105,7 @@
         xdg.configFile."niri/binds.kdl".source = ../../../dots/niri/binds.kdl;
         # Output overrides, same reason: DMS owns dms/outputs.kdl and rewrites
         # it at runtime, so anything that must survive lives here and is
-        # included after it.
+        # included before it (output blocks are first-match-wins).
         xdg.configFile."niri/outputs.kdl".source = ../../../dots/niri/outputs.kdl;
         # Seed (seed/): the repo ships dms/*.kdl as an initial default, but DMS
         # OWNS and regenerates them at runtime — so COPY (not symlink), make
@@ -101,9 +117,9 @@
         home.activation.seedNiriStreamOutput =
           lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             dest="$HOME/.config/niri/stream-output.kdl"
-            if [ ! -e "$dest" ]; then
+            if [ ! -e "$dest" ] || ${pkgs.diffutils}/bin/cmp -s "$dest" ${legacyStreamSeed}; then
               run mkdir -p "$HOME/.config/niri"
-              run cp ${../../../seed/niri/stream-output.kdl} "$dest"
+              run cp ${streamSeed} "$dest"
               run chmod u+w "$dest"
             fi
           '';

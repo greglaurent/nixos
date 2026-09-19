@@ -8,6 +8,3 @@
 // regenerates dms/outputs.kdl at runtime, so a stream could lose its output
 // mid-session and windows would silently fall back to the desktop monitor.
 // File state survives reloads.
-output "HDMI-A-1" {
-    off
-}
