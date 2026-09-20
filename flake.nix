@@ -79,6 +79,7 @@
       cascade = cascade.packages.${system}.default;               # Org→CSS/Typst/LaTeX/EPUB CLI (own flake)
       rename-books = rename-books.packages.${system}.default;     # heuristic PDF/EPUB renamer CLI (own flake)
       codex = pkgsUnstable.codex;                                  # ships near-daily; stable branch lags too far behind
+      pnpm = pkgsUnstable.pnpm;                                    # frontend tooling; stable branch lags a major behind
     };
 
     mkHost = host: nixpkgs.lib.nixosSystem {
