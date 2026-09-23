@@ -105,6 +105,10 @@ in
           "x-scheme-handler/unknown" = browser;
           "x-scheme-handler/ftp"     = browser;
           "x-scheme-handler/chrome"  = browser;
+          # Browser login hands the session back over claude://; without this the
+          # desktop app never gets the callback (mimeinfo.cache alone is not enough
+          # -- GIO, which Firefox-based browsers use, only reads mimeapps.list).
+          "x-scheme-handler/claude"  = "com.anthropic.Claude.desktop";
           # "x-scheme-handler/mailto"  = "…";   # no mail client installed
           # "x-scheme-handler/magnet"  = "…";   # no torrent client installed
 
