@@ -81,6 +81,11 @@ in
     # are left commented so they don't make xdg-open fail for that type.
     xdg.mimeApps = {
       enable = true;
+      # defaultApplications alone only writes [Default Applications]. GIO builds the
+      # *registered* handler list (what Firefox-based browsers show in their "choose an
+      # app" dialog) from [Added Associations] + mimeinfo.cache, so a scheme that only
+      # has a default gets an empty picker and the deep link goes nowhere.
+      associations.added."x-scheme-handler/claude" = "com.anthropic.Claude.desktop";
       defaultApplications =
         # Each value is mkDefault, so a user can override ANY individual mime type
         # directly — xdg.mimeApps.defaultApplications."image/svg+xml" = "x.desktop"

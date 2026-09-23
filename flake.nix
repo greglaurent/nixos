@@ -6,7 +6,7 @@
     # `flakePkgs` overlay below rather than switching the whole system to
     # unstable — self-updating on `nix flake update nixpkgs-unstable`, no
     # manual version/hash bumping the way pkgs/rustdesk-bin needs.
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     home-manager = {
