@@ -65,12 +65,14 @@
   # the device, so nothing clears that state. Unbind+rebind the i2c-hid device on
   # resume to force a clean driver probe, which resets the MT slots. resumeCommands
   # runs on sleep.target teardown, so it fires after plain suspend AND hibernate.
-  powerManagement.resumeCommands = ''
-    d=i2c-PIXA3854:00
-    echo -n "$d" > /sys/bus/i2c/drivers/i2c_hid_acpi/unbind || true
-    sleep 0.3
-    echo -n "$d" > /sys/bus/i2c/drivers/i2c_hid_acpi/bind
-  '';
+  # TEMPORARILY DISABLED 2026-09-23 to test whether kernel 7.2.7 still needs this.
+  # Revert with: git checkout hosts/rhizome/default.nix
+  # powerManagement.resumeCommands = ''
+  #   d=i2c-PIXA3854:00
+  #   echo -n "$d" > /sys/bus/i2c/drivers/i2c_hid_acpi/unbind || true
+  #   sleep 0.3
+  #   echo -n "$d" > /sys/bus/i2c/drivers/i2c_hid_acpi/bind
+  # '';
 
   # CachyOS-style perf stack (zram, earlyoom, ananicy, scx). scheduler defaults to
   # scx_lavd (latency/laptop-tuned) — right for the Framework.
