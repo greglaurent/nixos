@@ -11,6 +11,7 @@ in {
     ../../modules/home/kitty.nix
     ../../modules/home/org.nix
     ../../modules/home/rustdesk.nix
+    ../../modules/home/wayscriber.nix
     ../../modules/home/podman.nix
     ../../modules/home/packages.nix
     ../../modules/home/agenix.nix    # opt in: warn (at activation) if the master identity is missing
