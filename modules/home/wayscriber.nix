@@ -52,9 +52,10 @@ in {
     name = "Wayscriber";
     genericName = "Screen Annotation";
     comment = "On-screen annotation and zoom overlay for Wayland";
-    # --active shows the overlay immediately; the background daemon is the
-    # systemd unit above, not this entry.
-    exec = "${pkgs.wayscriber}/bin/wayscriber --active";
+    # Starts the daemon (tray + the Mod+D binds in dots/niri/binds.kdl need it
+    # running). --active would only throw up a one-shot overlay, leaving those
+    # binds with nothing to talk to.
+    exec = "${pkgs.wayscriber}/bin/wayscriber --daemon";
     # No icon ships with the package; input-tablet is Adwaita's scalable stand-in.
     icon = "input-tablet";
     terminal = false;
