@@ -42,4 +42,23 @@ in {
     # graphical-session.target.wants symlink, the same way it owns its presence.
     Install.WantedBy = lib.optionals cfg.autostart [ "graphical-session.target" ];
   };
+
+  # The package ships ONLY bin/wayscriber -- no .desktop file and no icon. That
+  # is why it never showed up in the Meta+Space launcher, and why DMS logs
+  # `Could not load icon "wayscriber"` (the tray item supplies its own pixmap,
+  # so the tray still renders). Declare the entry here rather than dropping a
+  # file into ~/.local/share/applications by hand.
+  config.xdg.desktopEntries.wayscriber = {
+    name = "Wayscriber";
+    genericName = "Screen Annotation";
+    comment = "On-screen annotation and zoom overlay for Wayland";
+    # --active shows the overlay immediately; the background daemon is the
+    # systemd unit above, not this entry.
+    exec = "${pkgs.wayscriber}/bin/wayscriber --active";
+    # No icon ships with the package; input-tablet is Adwaita's scalable stand-in.
+    icon = "input-tablet";
+    terminal = false;
+    categories = [ "Utility" "Graphics" ];
+    settings.Keywords = "annotate;draw;zoom;screen;overlay;";
+  };
 }
