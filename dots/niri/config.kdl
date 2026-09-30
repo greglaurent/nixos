@@ -176,7 +176,7 @@ hotkey-overlay {
     skip-at-startup
 }
 prefer-no-csd
-screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+screenshot-path "~/Media/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 // Wayscriber: ZoomIt-like on-screen annotation daemon (wlr-layer-shell overlay
 // + tray). NOT spawned at startup -- launch it from the app launcher (the
 // "Wayscriber" entry, declared in modules/home/wayscriber.nix), or set
