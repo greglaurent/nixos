@@ -33,6 +33,9 @@
     # needs a Sunshine host to pair with.
     pkgs.moonlight-qt
 
+    # Windows VM/apps; use the Podman backend enabled on both hosts.
+    pkgs.winboat            # flake overlay selects nixpkgs-unstable
+
     # ── Notes / office / reading ──
     pkgs.obsidian
 
