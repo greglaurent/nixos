@@ -43,8 +43,11 @@
 
     # Document / typesetting text faces (cascade + dead-tongue). Lora is the
     # serif body; Inter (above) is the sans; Jost is the geometric-sans preset.
-    # Just Lora is pulled from the Google Fonts collection to avoid the whole set.
-    (google-fonts.override { fonts = [ "Lora" ]; })
+    # Install only the selected families; documents choose them through Cascade.
+    (google-fonts.override {
+      fonts = [ "Lora" "Quattrocento" "Quattrocento Sans" ];
+    })
+    font-awesome_7           # resume contact icons
     jost                     # geometric sans — cascade "jost" preset
   ];
 }
