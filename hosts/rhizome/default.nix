@@ -1,4 +1,4 @@
-{ home-manager, nixos-hardware, ... }:
+{ home-manager, nixos-hardware, pkgs, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -57,6 +57,43 @@
   # trusting the lid — Framework 13 AMD hibernate can be quirky.
   services.logind.settings.Login.HandleLidSwitch = "suspend-then-hibernate";
   systemd.sleep.settings.Sleep.HibernateDelaySec = "30min";
+
+  # Intermittent PIXA3854 failures persist on 7.2.7 after removing the old
+  # workaround. Re-probe on every resume: a registered input device does not
+  # prove that its reports/MT state are healthy. This is a recovery workaround,
+  # not a confirmed kernel fix. sleep.target teardown covers suspend, hibernate,
+  # and suspend-then-hibernate. Keep the service available for manual recovery.
+  powerManagement.resumeCommands = "${pkgs.systemd}/bin/systemctl start touchpad-reset.service";
+  systemd.services.touchpad-reset = {
+    description = "Reinitialize rhizome's PixArt touchpad";
+    serviceConfig = {
+      Type = "oneshot";
+      TimeoutStartSec = "15s";
+    };
+    script = ''
+      driver=/sys/bus/i2c/drivers/i2c_hid_acpi
+      device=i2c-PIXA3854:00
+      if [ ! -d "/sys/bus/i2c/devices/$device" ]; then
+        echo "Touchpad device $device is missing" >&2
+        exit 1
+      fi
+      if [ -L "$driver/$device" ]; then
+        echo "Unbinding $device for resume recovery"
+        printf '%s' "$device" > "$driver/unbind"
+      fi
+      # Retry only binding; do not repeatedly tear down a recovered device.
+      for delay in 0.3 1 2; do
+        ${pkgs.coreutils}/bin/sleep "$delay"
+        if printf '%s' "$device" > "$driver/bind"; then
+          echo "Touchpad $device rebound successfully"
+          exit 0
+        fi
+        echo "Touchpad bind failed; retrying if attempts remain" >&2
+      done
+      echo "Touchpad recovery failed" >&2
+      exit 1
+    '';
+  };
 
   # CachyOS-style perf stack (zram, earlyoom, ananicy, scx). scheduler defaults to
   # scx_lavd (latency/laptop-tuned) — right for the Framework.
