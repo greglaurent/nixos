@@ -242,6 +242,8 @@ window-rule {
 // automatically when no default-floating-position is specified.
 window-rule {
     match app-id=r#"^(org\.pulseaudio\.)?pavucontrol$"#
+    default-column-width { fixed 650; }
+    default-window-height { fixed 520; }
     open-floating true
     open-focused true
 }
