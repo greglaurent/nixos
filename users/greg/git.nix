@@ -1,4 +1,4 @@
-{ ... }:
+{ config, lib, pkgs, ... }:
 {
   imports = [ ../../modules/home/git.nix ];
 
@@ -21,4 +21,19 @@
     #   };
     # }
   ];
+
+  # Books itself is the working tree, not Books/library. Bootstrap once using
+  # the installed GitHub SSH config; never pull/reset an existing checkout.
+  # Git refuses a nonempty destination, preserving any books already there.
+  home.activation.cloneBooks = lib.hm.dag.entryAfter [ "linkGeneration" "ensureMarginaliaLibrary" ] ''
+    books=${lib.escapeShellArg config.xdg.userDirs.extraConfig.BOOKS}
+    if [ ! -e "$books/.git" ] && [ ! -L "$books/.git" ]; then
+      run ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$books")"
+      echo "books: cloning greglaurent/library directly into $books"
+      run ${pkgs.git}/bin/git \
+        -c core.sshCommand="${pkgs.openssh}/bin/ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new" \
+        clone git@github.com:greglaurent/library.git "$books" \
+        || echo "books: WARNING — clone failed; existing files were not overwritten. Check the destination, GitHub SSH access and network, then rebuild again." >&2
+    fi
+  '';
 }

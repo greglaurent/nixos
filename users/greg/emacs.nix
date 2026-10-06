@@ -27,10 +27,9 @@
     # from this one knob.
     myOrgDir = "${config.home.homeDirectory}/Documents/org";
 
-    # marginalia's book library lives at ~/Media/Books (outside org). Single source:
-    # this option drives the mkdir, the $MARGINALIA_LIBRARY_DIRS env, and the daemon
-    # pin below — the doom config reads the env, nothing hardcoded in elisp.
-    myMarginaliaLibrary = [ "${config.home.homeDirectory}/Media/Books" ];
+    # Follow the XDG Books path used by the library checkout. This also drives
+    # $MARGINALIA_LIBRARY_DIRS and the daemon environment below.
+    myMarginaliaLibrary = [ config.xdg.userDirs.extraConfig.BOOKS ];
 
     programs.doom-emacs = {
       enable = true;
