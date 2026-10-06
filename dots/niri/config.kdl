@@ -234,10 +234,16 @@ window-rule {
 }
 window-rule {
     match app-id=r#"^gnome-control-center$"#
-    match app-id=r#"^pavucontrol$"#
     match app-id=r#"^nm-connection-editor$"#
     default-column-width { proportion 0.5; }
     open-floating false
+}
+// Volume control opens on the focused workspace; new floating windows center
+// automatically when no default-floating-position is specified.
+window-rule {
+    match app-id=r#"^(org\.pulseaudio\.)?pavucontrol$"#
+    open-floating true
+    open-focused true
 }
 window-rule {
     match app-id=r#"^org\.gnome\.Calculator$"#
