@@ -10,6 +10,8 @@
   # ── Facts unique to this machine ──
   networking.hostName = "plateau";
   system.stateVersion = "26.05";
+  # Profile the pinned Pebble TPC reader/writer benchmark with the running kernel's perf.
+  environment.systemPackages = [ pkgs.perf ];
 
   # Wake-on-LAN on the onboard NIC so Moonlight can wake plateau from sleep.
   # enp74s0 = onboard PCIe NIC (MAC 9c:6b:00:58:c3:14). The USB ethernet
