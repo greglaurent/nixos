@@ -56,16 +56,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # rename-books: heuristic PDF/EPUB renamer CLI, own flake (packages.default
-    # only — no homeModule needed). git+ssh, private. Re-lock (`nix flake update
-    # rename-books`) + rebuild to pick up pushed changes.
-    rename-books = {
-      url = "git+ssh://git@github.com/greglaurent/rename-books";
+    # book-rename: metadata-based EPUB/PDF renamer CLI, own flake (packages.default
+    # only — no homeModule needed). Supersedes rename-books. git+ssh, private.
+    # Re-lock (`nix flake update book-rename`) + rebuild to pick up pushed changes.
+    book-rename = {
+      url = "git+ssh://git@github.com/greglaurent/book-rename";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { nixpkgs, nixpkgs-unstable, home-manager, dms, dank-greeter, doom-emacs, nixos-hardware, zen-browser, claude-desktop, agenix, cascade, typst-libs, rename-books, ... }:
+  outputs = { nixpkgs, nixpkgs-unstable, home-manager, dms, dank-greeter, doom-emacs, nixos-hardware, zen-browser, claude-desktop, agenix, cascade, typst-libs, book-rename, ... }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
@@ -77,7 +77,7 @@
       obsbot-camera-control = final.callPackage ./pkgs/obsbot-camera-control { };
       rustdesk-bin = final.callPackage ./pkgs/rustdesk-bin { };   # official 1.4.9 binary, patched for NixOS
       cascade = cascade.packages.${system}.default;               # Org→CSS/Typst/LaTeX/EPUB CLI (own flake)
-      rename-books = rename-books.packages.${system}.default;     # heuristic PDF/EPUB renamer CLI (own flake)
+      book-rename = book-rename.packages.${system}.default;        # metadata-based EPUB/PDF renamer CLI (own flake)
       codex = pkgsUnstable.codex;                                  # ships near-daily; stable branch lags too far behind
       winboat = pkgsUnstable.winboat;                              # latest release for Windows VM/app testing
       claude-code = pkgsUnstable.claude-code;                      # same; newer models are gated on the client version

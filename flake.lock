@@ -23,6 +23,26 @@
         "type": "github"
       }
     },
+    "book-rename": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791254674,
+        "narHash": "sha256-0cezCXU+1qR3RG0wtAafnGHn4NZaySjSb4ZoU/5rzUM=",
+        "ref": "refs/heads/main",
+        "rev": "099e7a6f9b0a3f4c357263cabb443c76fcc9b342",
+        "revCount": 2,
+        "type": "git",
+        "url": "ssh://git@github.com/greglaurent/book-rename"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/greglaurent/book-rename"
+      }
+    },
     "cascade": {
       "inputs": {
         "nixpkgs": [
@@ -447,29 +467,10 @@
         "type": "github"
       }
     },
-    "rename-books": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1789755869,
-        "narHash": "sha256-YT2avDfI6Y19Vs0sfK2S9XXcHmGstpFZGHsFQfsFKqc=",
-        "ref": "refs/heads/main",
-        "rev": "264d6ef7e9720ec428bb97003d492f0a84ab7d39",
-        "revCount": 2,
-        "type": "git",
-        "url": "ssh://git@github.com/greglaurent/rename-books"
-      },
-      "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/greglaurent/rename-books"
-      }
-    },
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "book-rename": "book-rename",
         "cascade": "cascade",
         "claude-desktop": "claude-desktop",
         "dank-greeter": "dank-greeter",
@@ -479,7 +480,6 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_3",
         "nixpkgs-unstable": "nixpkgs-unstable",
-        "rename-books": "rename-books",
         "typst-libs": "typst-libs",
         "zen-browser": "zen-browser"
       }

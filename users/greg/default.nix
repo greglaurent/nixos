@@ -30,6 +30,6 @@ in {
   home.packages = with pkgs; [
     rtk                 # Rust Token Killer: compresses CLI output before it hits the agent's context
     pkgs.cascade        # Org → CSS/Typst/LaTeX/EPUB typographic export (explicit: bare `cascade` is the flake-input arg)
-    pkgs.rename-books   # heuristic PDF/EPUB → "Author - Title (Year)" renamer
+    pkgs.book-rename    # metadata-based EPUB/PDF renamer ("Title - Author - Year [...]")
   ];
 }
