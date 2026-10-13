@@ -30,11 +30,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791907373,
-        "narHash": "sha256-aPK103MUqhSmhILUt7nE/a+IXqIhP4VG43upDfZ49f8=",
+        "lastModified": 1791909175,
+        "narHash": "sha256-l6VAFs9pHsJHMM9NNFKIIxEjEkjZ0UyCShQr/aEheQY=",
         "ref": "refs/heads/main",
-        "rev": "e3a2c0cc75612e4ec3be025137912fc9c2e1204b",
-        "revCount": 3,
+        "rev": "8fe9acfd947106a8fad401d48ad2898f19a20499",
+        "revCount": 4,
         "type": "git",
         "url": "ssh://git@github.com/greglaurent/book-rename"
       },
