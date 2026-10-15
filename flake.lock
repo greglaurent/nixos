@@ -446,11 +446,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790268913,
-        "narHash": "sha256-IqBsVyTe2CraU12deT+hpvbU+OUg7UyF7hsqjAONmbg=",
+        "lastModified": 1792034596,
+        "narHash": "sha256-1TVgE2iDCq3Mnvd1p37WG7olcjoLwe4dTux6jyackAA=",
         "ref": "refs/heads/master",
-        "rev": "b4e313d58d8457ccb7eb32a3b621fa40eb0f4000",
-        "revCount": 13,
+        "rev": "add188fb4ada4883d9df54e6ebde1bc4cf166f54",
+        "revCount": 14,
         "type": "git",
         "url": "ssh://git@github.com/greglaurent/typst-libs"
       },
