@@ -28,6 +28,10 @@
     </fontconfig>
   '';
 
+  # Installed families Cascade compiles on every activation, so documents can
+  # name them ("Cascade EB Garamond"). Each must be installed below.
+  myCascadeFonts = [ "EB Garamond:serif" ];
+
   home.packages = with pkgs; [
     # DMS defaults
     inter                    # UI       — "Inter Variable"
