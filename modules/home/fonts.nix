@@ -42,10 +42,11 @@
     noto-fonts-color-emoji
 
     # Document / typesetting text faces (cascade + dead-tongue). Lora is the
-    # serif body; Inter (above) is the sans; Jost is the geometric-sans preset.
+    # serif body; Inter (above) is the sans; Jost is the geometric-sans preset;
+    # EB Garamond is the serif for Palimpsest (variable 400-800, with italics).
     # Install only the selected families; documents choose them through Cascade.
     (google-fonts.override {
-      fonts = [ "Lora" "Quattrocento" "Quattrocento Sans" ];
+      fonts = [ "Lora" "Quattrocento" "Quattrocento Sans" "EB Garamond" ];
     })
     font-awesome_7           # resume contact icons
     jost                     # geometric sans — cascade "jost" preset
