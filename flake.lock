@@ -47,11 +47,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792120506,
-        "narHash": "sha256-idkOgYnLCxRpF38kUdNIuT16f33w9LhY5pzVBliyLlc=",
+        "lastModified": 1792162330,
+        "narHash": "sha256-fd+HpSl9cUiyDujSsB/uy9V+s6+dNwPAJu/0akPov7s=",
         "ref": "refs/heads/main",
-        "rev": "1d549dc3799023800653498c95a80ed6ce08ca02",
-        "revCount": 68,
+        "rev": "044e24f240ce94b104c01f4268df62d50f9a03d9",
+        "revCount": 69,
         "type": "git",
         "url": "ssh://git@github.com/greglaurent/cascade-typography"
       },
