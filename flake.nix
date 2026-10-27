@@ -6,7 +6,11 @@
     # `flakePkgs` overlay below rather than switching the whole system to
     # unstable — self-updating on `nix flake update nixpkgs-unstable`, no
     # manual version/hash bumping the way pkgs/rustdesk-bin needs.
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+    #
+    # PINNED to a rev whose electron/winboat are in cache.nixos.org. Newer unstable
+    # revs (electron 43.8.x) have no cache hit and the source build fails (GN
+    # duplicate arg v8_snapshot_toolchain). Unpin once nixpkgs fixes electron.
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/02c087f3fe673c9e317f206a627cb6b910336dbe";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     home-manager = {
