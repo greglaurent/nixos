@@ -63,7 +63,7 @@
     })
     pkgs.imagemagick
     pkgs.ffmpegthumbnailer
-    pkgs.sxiv                # X11 image viewer (runs under XWayland)
+    pkgs.imv                 # native Wayland image viewer
 
     # ── Other Utils ──
     # default: localsend
