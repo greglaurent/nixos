@@ -30,7 +30,7 @@
 
   # Installed families Cascade compiles on every activation, so documents can
   # name them ("Cascade EB Garamond"). Each must be installed below.
-  myCascadeFonts = [ "EB Garamond:serif" ];
+  myCascadeFonts = [ "EB Garamond:serif" "Montserrat:sans" ];
 
   home.packages = with pkgs; [
     # DMS defaults
@@ -47,10 +47,11 @@
 
     # Document / typesetting text faces (cascade + dead-tongue). Lora is the
     # serif body; Inter (above) is the sans; Jost is the geometric-sans preset;
-    # EB Garamond is the serif for Palimpsest (variable 400-800, with italics).
+    # EB Garamond is the serif for Palimpsest (variable 400-800, with italics);
+    # Montserrat is a geometric sans.
     # Install only the selected families; documents choose them through Cascade.
     (google-fonts.override {
-      fonts = [ "Lora" "Quattrocento" "Quattrocento Sans" "EB Garamond" ];
+      fonts = [ "Lora" "Quattrocento" "Quattrocento Sans" "EB Garamond" "Montserrat" ];
     })
     font-awesome_7           # resume contact icons
     jost                     # geometric sans — cascade "jost" preset
