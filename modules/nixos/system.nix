@@ -81,6 +81,7 @@
     neovim
     dmidecode   # hardware/BIOS info (Vendor/Version/Release Date) — pairs with fwupd above
     lshw        # detailed hardware listing (CPU, etc.)
+    openssl     # `openssl rand -hex 32` for secrets, cert inspection
   ];
   programs.git.enable = true;
   programs.zsh.enable = true;
