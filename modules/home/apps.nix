@@ -39,6 +39,10 @@
     # ── Notes / office / reading ──
     pkgs.obsidian
 
+    # ── File sync ── desktop client for the self-hosted Seafile server
+    # (seafile.the-fold.net; compose-stacks/seafile).
+    pkgs.seafile-client
+
     # ── Media ──
     pkgs.vlc
     pkgs.mpv
