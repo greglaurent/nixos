@@ -9,8 +9,18 @@
     nixd
     nixfmt
 
-    # Rust
-    rustup
+    # Rust — stable from nixpkgs, NOT rustup. rustup unpacks each toolchain into
+    # ~/.rustup and bakes its own store path into it (patchelf'd rustc, a wrapped
+    # gcc-ld/ld.lld). ~/.rustup is not a GC root, so every nixpkgs bump of rustup
+    # or glibc orphans those paths and nix.gc (modules/nixos/system.nix) collects
+    # them 30 days later, breaking every installed toolchain. A nix-built toolchain
+    # is a store path in this generation and cannot be collected. Projects needing
+    # nightly pin it in their own rust-toolchain.toml and get it from a flake
+    # devShell via direnv — nightly never lands in the system profile.
+    cargo
+    rustc
+    clippy
+    rustfmt
     (lib.hiPrio rust-analyzer)   # real rust-analyzer instead of proxy shim
     cargo-deny                   # dependency license/advisory/ban linting (deny.toml)
     cargo-nextest                # faster test runner (`cargo nextest run`)
