@@ -68,7 +68,6 @@
   outputs = { nixpkgs, nixpkgs-unstable, home-manager, dms, dank-greeter, doom-emacs, nixos-hardware, zen-browser, claude-desktop, agenix, cascade, typst-libs, book-rename, ... }:
   let
     system = "x86_64-linux";
-    pkgs = import nixpkgs { inherit system; };
     pkgsUnstable = import nixpkgs-unstable { inherit system; config.allowUnfree = true; };
     hosts = [ "rhizome" "plateau" ];
     flakePkgs = final: prev: {
@@ -100,27 +99,6 @@
     templates.devshell = {
       path = ./templates/devshell;
       description = "Per-project dev shell (flake devShell + .envrc for direnv)";
-    };
-
-    # Per-project dev shells kept OUT of the project repos. Enter with
-    # `nix develop ~/.config/nixos#<name>`, or from the project via a
-    # locally-excluded .envrc containing `use flake ~/.config/nixos#<name>`.
-    devShells.${system}.pact-demo = pkgs.mkShell {
-      packages = with pkgs; [
-        git
-        openssh          # pact-python is a git+ssh dep from forgejo.abmac.io
-        nodejs           # Hono server + web renderer; bundles npm/npx
-        just             # task runner (Justfile)
-        python3          # capture engine; pytest/pact-python land in a local .venv
-        ruff
-        cargo            # build ../pact-runtime's `lifecycle` example
-        rustc
-        gcc              # linker/cc for the Rust build
-        pkg-config
-      ];
-      shellHook = ''
-        echo "▶ pact-demo dev shell (from ~/.config/nixos)"
-      '';
     };
   };
 }
