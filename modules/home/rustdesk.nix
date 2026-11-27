@@ -9,7 +9,8 @@
 # which niri DOES support (same path OBS uses).
 { lib, pkgs, osConfig, ... }:
 lib.mkIf (osConfig.myRustdesk.enable or false) {
-  # Official upstream 1.4.9 binary (flake overlay), not nixpkgs' 1.4.5 source
-  # build — the older one mishandles the niri Wayland session ("x11 expected").
+  # nixpkgs-unstable's `rustdesk-flutter` (flake overlay; follows `nix flake update
+  # nixpkgs-unstable`). The 1.4.5 build in stable mishandles the niri Wayland session
+  # ("x11 expected"): if that returns after an update, check this first.
   home.packages = [ pkgs.rustdesk-bin ];
 }

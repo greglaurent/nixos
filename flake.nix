@@ -5,7 +5,7 @@
     # infrequent backports. Pull just those packages from here via the
     # `flakePkgs` overlay below rather than switching the whole system to
     # unstable — self-updating on `nix flake update nixpkgs-unstable`, no
-    # manual version/hash bumping the way pkgs/rustdesk-bin needs.
+    # manual version/hash bumping.
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware";
@@ -74,7 +74,7 @@
       zen-browser = zen-browser.packages.${system}.default;
       claude-desktop = claude-desktop.packages.${system}.claude-desktop-fhs;
       obsbot-camera-control = final.callPackage ./pkgs/obsbot-camera-control { };
-      rustdesk-bin = final.callPackage ./pkgs/rustdesk-bin { };   # official 1.4.9 binary, patched for NixOS
+      rustdesk-bin = pkgsUnstable.rustdesk-flutter;                # self-updates with nixpkgs-unstable (was a hand-pinned .deb)
       cascade = cascade.packages.${system}.default;               # Org→CSS/Typst/LaTeX/EPUB CLI (own flake)
       book-rename = book-rename.packages.${system}.default;        # metadata-based EPUB/PDF renamer CLI (own flake)
       codex = pkgsUnstable.codex;                                  # ships near-daily; stable branch lags too far behind

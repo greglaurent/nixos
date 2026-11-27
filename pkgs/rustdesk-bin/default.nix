@@ -44,11 +44,11 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "rustdesk-bin";
-  version = "1.4.9";
+  version = "1.5.3";
 
   src = fetchurl {
     url = "https://github.com/rustdesk/rustdesk/releases/download/${finalAttrs.version}/rustdesk-${finalAttrs.version}-x86_64.deb";
-    hash = "sha256-ckS6R8QOgEFyBEv75llGfFTORlVMmOeMjAQG8dYS/aM=";
+    hash = "sha256-gQltL2X9QzUlQMNRvKFbsHEqKm+e+kyV6f/yXLl7O4E=";
   };
 
   nativeBuildInputs = [ dpkg autoPatchelfHook wrapGAppsHook3 makeWrapper ];
