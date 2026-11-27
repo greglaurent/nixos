@@ -5,7 +5,7 @@
     # infrequent backports. Pull just those packages from here via the
     # `flakePkgs` overlay below rather than switching the whole system to
     # unstable — self-updating on `nix flake update nixpkgs-unstable`, no
-    # manual version/hash bumping.
+    # manual version/hash bumping (RustDesk is the exception for now: see its overlay line).
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
     nixos-hardware.url = "github:NixOS/nixos-hardware";
@@ -74,7 +74,12 @@
       zen-browser = zen-browser.packages.${system}.default;
       claude-desktop = claude-desktop.packages.${system}.claude-desktop-fhs;
       obsbot-camera-control = final.callPackage ./pkgs/obsbot-camera-control { };
-      rustdesk-bin = pkgsUnstable.rustdesk-flutter;                # self-updates with nixpkgs-unstable (was a hand-pinned .deb)
+      # Hand-pinned official *unattended-wayland* .deb (DRM/KMS capture + uinput, no portal):
+      # the only build that captures on niri, which lacks the RemoteDesktop portal.
+      rustdesk-bin = final.callPackage ./pkgs/rustdesk-bin { };
+      # Self-updating alternative; switch back once nixpkgs ships the unattended-wayland build
+      # (stock build fails capture on niri: "No such interface ...impl.portal.RemoteDesktop"):
+      # rustdesk-bin = pkgsUnstable.rustdesk-flutter;
       cascade = cascade.packages.${system}.default;               # Org→CSS/Typst/LaTeX/EPUB CLI (own flake)
       book-rename = book-rename.packages.${system}.default;        # metadata-based EPUB/PDF renamer CLI (own flake)
       codex = pkgsUnstable.codex;                                  # ships near-daily; stable branch lags too far behind

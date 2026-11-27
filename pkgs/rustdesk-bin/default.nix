@@ -1,8 +1,12 @@
-# The OFFICIAL upstream RustDesk binary (the same build Arch's `rustdesk-bin`
-# ships), autopatched to run natively on NixOS. We use the prebuilt .deb rather
-# than nixpkgs' from-source `rustdesk-flutter` (1.4.5) because that older build
-# mishandles the Wayland session on niri ("Unsupported display server … x11
-# expected"); the upstream 1.4.9 binary is what actually works there.
+# The OFFICIAL upstream RustDesk *unattended-wayland* build, autopatched to run
+# natively on NixOS. It captures the screen via DRM/KMS (libdrmtap, in a root
+# service -- see modules/nixos/rustdesk.nix) and injects input via uinput, so it
+# needs NO screencast/remote-desktop portal. That is why it works on niri, which
+# lacks the RemoteDesktop portal that the stock build (and nixpkgs'
+# `rustdesk-flutter`) requires for capture.
+#
+# Hand-pinned: bump `version` + `hash` together. To go back to the self-updating
+# package, see the commented-out `rustdesk-bin` line in flake.nix.
 { lib
 , stdenv
 , fetchurl
@@ -25,6 +29,7 @@
 , pam
 , zlib
 , libva
+, libdrm
 , gst_all_1
 , libx11
 , libxfixes
@@ -47,15 +52,20 @@ stdenv.mkDerivation (finalAttrs: {
   version = "1.5.3";
 
   src = fetchurl {
-    url = "https://github.com/rustdesk/rustdesk/releases/download/${finalAttrs.version}/rustdesk-${finalAttrs.version}-x86_64.deb";
-    hash = "sha256-gQltL2X9QzUlQMNRvKFbsHEqKm+e+kyV6f/yXLl7O4E=";
+    url = "https://github.com/rustdesk/rustdesk/releases/download/${finalAttrs.version}/rustdesk-unattended-wayland-${finalAttrs.version}-x86_64.deb";
+    hash = "sha256-cI85DEbDV7ciVe1qFWDaZEyDgcUd2bEIy/KjzspzPg0=";
   };
+  # Stock (portal-based) build, kept for going back:
+  # src = fetchurl {
+  #   url = "https://github.com/rustdesk/rustdesk/releases/download/${finalAttrs.version}/rustdesk-${finalAttrs.version}-x86_64.deb";
+  #   hash = "sha256-gQltL2X9QzUlQMNRvKFbsHEqKm+e+kyV6f/yXLl7O4E=";
+  # };
 
   nativeBuildInputs = [ dpkg autoPatchelfHook wrapGAppsHook3 makeWrapper ];
 
   buildInputs = [
     glib gtk3 gdk-pixbuf librsvg pango cairo at-spi2-atk
-    wayland libxkbcommon libpulseaudio pipewire dbus pam zlib libva
+    wayland libxkbcommon libpulseaudio pipewire dbus pam zlib libva libdrm
     gst_all_1.gstreamer gst_all_1.gst-plugins-base
     libx11 libxfixes libxtst libxcb
   ];
@@ -78,6 +88,10 @@ stdenv.mkDerivation (finalAttrs: {
     runHook preInstall
     mkdir -p $out
     cp -r usr/share $out/share
+    # libdrmtap (DRM/KMS capture). RustDesk dlopens it by the absolute path
+    # /usr/lib/rustdesk/libdrmtap.so.0; modules/nixos/rustdesk.nix links that path here.
+    mkdir -p $out/lib
+    cp -r usr/lib/rustdesk $out/lib/rustdesk
     for d in $out/share/applications/*.desktop; do
       substituteInPlace "$d" --replace-quiet "/usr/bin/rustdesk" "rustdesk"
     done
@@ -87,6 +101,9 @@ stdenv.mkDerivation (finalAttrs: {
   postFixup = ''
     # Patch every ELF EXCEPT libapp.so.
     elfs=( $out/share/rustdesk/rustdesk )
+    # The real libdrmtap file (not its soname symlink), whatever version it is.
+    while IFS= read -r -d "" so; do elfs+=( "$so" ); done \
+      < <(find $out/lib/rustdesk -type f -name 'libdrmtap.so.*' -print0)
     for so in $out/share/rustdesk/lib/*.so; do
       [ "$(basename "$so")" = libapp.so ] || elfs+=( "$so" )
     done

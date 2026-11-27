@@ -1,16 +1,16 @@
-# RustDesk (remote desktop), NATIVE — run directly on the host, the same way it
-# works on Arch (official Flutter binary, packaged by our rustdesk-bin overlay). On niri it captures through the plain ScreenCast portal (approve
-# the source picker once per connection) and injects input via /dev/uinput
-# (enabled by modules/nixos/rustdesk.nix).
+# RustDesk (remote desktop), NATIVE — run directly on the host (official Flutter binary,
+# packaged by our rustdesk-bin overlay). This is the upstream *unattended-wayland* build:
+# it captures the screen via DRM/KMS (libdrmtap) from a root service and injects input via
+# /dev/uinput, so it needs NO screencast/remote-desktop portal. Both the service and uinput
+# are set up by modules/nixos/rustdesk.nix. The stock build needs the RemoteDesktop portal,
+# which niri does not implement (niri #390), so its capture fails on niri.
 #
-# We do NOT use distrobox anymore: running RustDesk in a container routed screen
-# capture to the RemoteDesktop portal, which niri does not implement (niri #390),
-# so capture always failed. Native RustDesk uses the plain ScreenCast portal,
-# which niri DOES support (same path OBS uses).
+# Known upstream glitch: cursor position on fractional-scale outputs (rustdesk/rustdesk#15916).
 { lib, pkgs, osConfig, ... }:
 lib.mkIf (osConfig.myRustdesk.enable or false) {
-  # nixpkgs-unstable's `rustdesk-flutter` (flake overlay; follows `nix flake update
-  # nixpkgs-unstable`). The 1.4.5 build in stable mishandles the niri Wayland session
-  # ("x11 expected"): if that returns after an update, check this first.
+  # The official unattended-wayland build (pkgs/rustdesk-bin, flake overlay): captures via
+  # DRM/KMS through the root service in modules/nixos/rustdesk.nix, no portal needed.
+  # Self-updating alternative (stock build, needs the RemoteDesktop portal niri lacks):
+  # pkgs.rustdesk-flutter via nixpkgs-unstable -- see the commented line in flake.nix.
   home.packages = [ pkgs.rustdesk-bin ];
 }
