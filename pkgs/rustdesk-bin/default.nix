@@ -30,6 +30,7 @@
 , zlib
 , libva
 , libdrm
+, libglvnd
 , gst_all_1
 , libx11
 , libxfixes
@@ -65,13 +66,20 @@ stdenv.mkDerivation (finalAttrs: {
 
   buildInputs = [
     glib gtk3 gdk-pixbuf librsvg pango cairo at-spi2-atk
-    wayland libxkbcommon libpulseaudio pipewire dbus pam zlib libva libdrm
+    wayland libxkbcommon libpulseaudio pipewire dbus pam zlib libva libdrm libglvnd
     gst_all_1.gstreamer gst_all_1.gst-plugins-base
     libx11 libxfixes libxtst libxcb
   ];
 
   # Bundled Flutter plugin .so's live beside the binary; let the loader find them.
-  appendRunpaths = [ "${placeholder "out"}/share/rustdesk/lib" ];
+  # libglvnd: libdrmtap dlopen()s libEGL.so.1 / libGLESv2.so.2 (not in its NEEDED list) to
+  # de-tile scanout buffers on the GPU. dlopen searches the caller's RUNPATH, and NixOS has no
+  # global libEGL.so.1 (only mesa's vendor lib), so without this capture fails with
+  # "drmtap_convert_dmabuf failed: errno 1" and then falls back to the portal.
+  appendRunpaths = [
+    "${placeholder "out"}/share/rustdesk/lib"
+    "${lib.getLib libglvnd}/lib"
+  ];
 
   dontWrapGApps = true;   # wrap manually in postFixup (after gappsWrapperArgs set)
   dontStrip = true;       # Dart snapshots carry data in symbols/sections
